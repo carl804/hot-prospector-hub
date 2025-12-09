@@ -1,7 +1,7 @@
-import { TaskDashboard } from '@/components/tasks/TaskDashboard';
+import { ClientDashboard } from '@/components/clients/ClientDashboard';
 
 const Index = () => {
-  return <TaskDashboard />;
+  return <ClientDashboard />;
 };
 
 export default Index;
