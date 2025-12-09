@@ -13,6 +13,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['Inter', 'system-ui', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -30,6 +33,14 @@ export default {
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -57,6 +68,33 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        kanban: {
+          bg: "hsl(var(--kanban-bg))",
+          column: "hsl(var(--kanban-column-bg))",
+        },
+        status: {
+          overdue: "hsl(var(--status-overdue))",
+          urgent: "hsl(var(--status-urgent))",
+          safe: "hsl(var(--status-safe))",
+          neutral: "hsl(var(--status-neutral))",
+        },
+        badge: {
+          "green-bg": "hsl(var(--badge-green-bg))",
+          "green-text": "hsl(var(--badge-green-text))",
+          "yellow-bg": "hsl(var(--badge-yellow-bg))",
+          "yellow-text": "hsl(var(--badge-yellow-text))",
+          "red-bg": "hsl(var(--badge-red-bg))",
+          "red-text": "hsl(var(--badge-red-text))",
+          "blue-bg": "hsl(var(--badge-blue-bg))",
+          "blue-text": "hsl(var(--badge-blue-text))",
+          "gray-bg": "hsl(var(--badge-gray-bg))",
+          "gray-text": "hsl(var(--badge-gray-text))",
+        },
+      },
+      boxShadow: {
+        card: "var(--card-shadow)",
+        "card-hover": "var(--card-shadow-hover)",
+        "card-dragging": "var(--card-shadow-dragging)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -65,20 +103,12 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
