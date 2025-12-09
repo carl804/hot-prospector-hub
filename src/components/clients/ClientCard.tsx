@@ -1,6 +1,6 @@
-import { Building2, CheckCircle2, Clock, AlertTriangle, ChevronRight, Calendar, User } from 'lucide-react';
+import { Building2, CheckCircle2, Clock, AlertTriangle, ChevronRight, Calendar, GitBranch } from 'lucide-react';
 import { format } from 'date-fns';
-import { Client, CSM_LIST } from '@/types/client';
+import { Client, CSM_LIST, PIPELINE_STAGES } from '@/types/client';
 import { Task } from '@/types/task';
 import { cn } from '@/lib/utils';
 import { isToday, isPast, startOfDay } from 'date-fns';
@@ -29,6 +29,7 @@ export function ClientCard({ client, tasks, onClick }: ClientCardProps) {
 
   const isComplete = client.status === 'completed' || progress === 100;
   const csm = CSM_LIST.find((c) => c.id === client.assignedCsmId);
+  const stage = PIPELINE_STAGES.find((s) => s.id === client.pipelineStage);
 
   return (
     <div
@@ -74,28 +75,29 @@ export function ClientCard({ client, tasks, onClick }: ClientCardProps) {
         </div>
       )}
 
-      {/* Booking Status */}
-      <div className="flex items-center gap-3 mb-3 text-xs">
+      {/* Pipeline Stage & Booking Status Row */}
+      <div className="flex items-center gap-2 mb-3 flex-wrap">
+        {/* Pipeline Stage */}
+        {stage && (
+          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full bg-badge-blue-bg text-badge-blue-text">
+            <GitBranch className="w-3 h-3" />
+            {stage.label}
+          </span>
+        )}
+
+        {/* Booking Status */}
         <div className={cn(
-          'flex items-center gap-1',
-          client.assessmentBooked ? 'text-success' : 'text-muted-foreground/50'
+          'flex items-center gap-1 text-[10px] px-2 py-1 rounded-full',
+          client.assessmentBooked ? 'bg-badge-green-bg text-badge-green-text' : 'bg-secondary text-muted-foreground/60'
         )}>
-          {client.assessmentBooked ? (
-            <CheckCircle2 className="w-3 h-3" />
-          ) : (
-            <Calendar className="w-3 h-3" />
-          )}
+          {client.assessmentBooked ? <CheckCircle2 className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
           <span>Assessment</span>
         </div>
         <div className={cn(
-          'flex items-center gap-1',
-          client.onboardingBooked ? 'text-success' : 'text-muted-foreground/50'
+          'flex items-center gap-1 text-[10px] px-2 py-1 rounded-full',
+          client.onboardingBooked ? 'bg-badge-green-bg text-badge-green-text' : 'bg-secondary text-muted-foreground/60'
         )}>
-          {client.onboardingBooked ? (
-            <CheckCircle2 className="w-3 h-3" />
-          ) : (
-            <Calendar className="w-3 h-3" />
-          )}
+          {client.onboardingBooked ? <CheckCircle2 className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
           <span>Onboarding</span>
         </div>
       </div>

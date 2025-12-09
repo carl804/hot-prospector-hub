@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
-import { X, Plus, Mail, Phone, Calendar, CheckCircle2, Clock, AlertTriangle, FileText, Bell, Send } from 'lucide-react';
+import { X, Plus, Mail, Phone, Calendar, CheckCircle2, Clock, AlertTriangle, FileText, Send, GitBranch } from 'lucide-react';
 import { format, isToday, isPast, isTomorrow, startOfDay } from 'date-fns';
-import { Client, CSM_LIST } from '@/types/client';
+import { Client, CSM_LIST, PIPELINE_STAGES, PipelineStage } from '@/types/client';
 import { Task, TASK_CATEGORIES, Priority } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -238,6 +238,31 @@ export function ClientTaskPanel({
                 {CSM_LIST.map((c) => (
                   <SelectItem key={c.id} value={c.id}>
                     {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Pipeline Stage */}
+          <div className="flex items-center justify-between mb-4 p-3 bg-badge-blue-bg/50 rounded-lg">
+            <div className="flex items-center gap-2">
+              <GitBranch className="w-4 h-4 text-badge-blue-text" />
+              <span className="text-sm font-medium text-badge-blue-text">
+                {PIPELINE_STAGES.find((s) => s.id === client.pipelineStage)?.label}
+              </span>
+            </div>
+            <Select
+              value={client.pipelineStage}
+              onValueChange={(value) => onUpdateClient({ ...client, pipelineStage: value as PipelineStage })}
+            >
+              <SelectTrigger className="w-[180px] h-8 text-xs bg-background">
+                <SelectValue placeholder="Change Stage" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                {PIPELINE_STAGES.map((stage) => (
+                  <SelectItem key={stage.id} value={stage.id}>
+                    {stage.label}
                   </SelectItem>
                 ))}
               </SelectContent>
