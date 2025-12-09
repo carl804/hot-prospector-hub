@@ -1,7 +1,7 @@
-import { KanbanBoard } from '@/components/dashboard/KanbanBoard';
+import { TaskDashboard } from '@/components/tasks/TaskDashboard';
 
 const Index = () => {
-  return <KanbanBoard />;
+  return <TaskDashboard />;
 };
 
 export default Index;
