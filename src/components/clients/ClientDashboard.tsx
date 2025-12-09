@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, Plus, Building2, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
-import { Client, CLIENTS } from '@/types/client';
+import { Client, CLIENTS as INITIAL_CLIENTS, CSM_LIST } from '@/types/client';
 import { Task } from '@/types/task';
 import { MOCK_TASKS } from '@/data/taskData';
 import { Button } from '@/components/ui/button';
@@ -14,16 +14,20 @@ import {
 } from '@/components/ui/select';
 import { ClientCard } from './ClientCard';
 import { ClientTaskPanel } from './ClientTaskPanel';
+import { IntakeFormModal } from './IntakeFormModal';
 import { cn } from '@/lib/utils';
 import { isToday, isPast, startOfDay } from 'date-fns';
 
 type StatusFilter = 'all' | 'active' | 'completed';
 
 export function ClientDashboard() {
+  const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);
   const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [showIntakeForm, setShowIntakeForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
+  const [csmFilter, setCsmFilter] = useState('all');
 
   // Get tasks for each client
   const getClientTasks = (clientId: string) => tasks.filter((t) => t.clientId === clientId);
@@ -37,7 +41,7 @@ export function ClientDashboard() {
 
   // Filter clients
   const filteredClients = useMemo(() => {
-    return CLIENTS.filter((client) => {
+    return clients.filter((client) => {
       const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         client.contactName.toLowerCase().includes(searchQuery.toLowerCase());
       
@@ -49,9 +53,11 @@ export function ClientDashboard() {
         (statusFilter === 'active' && !isComplete) ||
         (statusFilter === 'completed' && isComplete);
 
-      return matchesSearch && matchesStatus;
+      const matchesCsm = csmFilter === 'all' || client.assignedCsmId === csmFilter;
+
+      return matchesSearch && matchesStatus && matchesCsm;
     });
-  }, [searchQuery, statusFilter, tasks]);
+  }, [clients, searchQuery, statusFilter, csmFilter, tasks]);
 
   // Global stats
   const stats = useMemo(() => {
@@ -62,7 +68,7 @@ export function ClientDashboard() {
     });
     const dueTodayTasks = activeTasks.filter((t) => isToday(new Date(t.dueDate)));
 
-    const activeClients = CLIENTS.filter((c) => {
+    const activeClients = clients.filter((c) => {
       const progress = getClientProgress(c.id);
       return c.status !== 'completed' && progress < 100;
     });
@@ -73,7 +79,7 @@ export function ClientDashboard() {
       overdue: overdueTasks.length,
       dueToday: dueTodayTasks.length,
     };
-  }, [tasks]);
+  }, [clients, tasks]);
 
   const handleToggleTask = (taskId: string) => {
     setTasks((prev) =>
@@ -100,6 +106,23 @@ export function ClientDashboard() {
 
   const handleUpdateTask = (updatedTask: Task) => {
     setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+  };
+
+  const handleUpdateClient = (updatedClient: Client) => {
+    setClients((prev) => prev.map((c) => (c.id === updatedClient.id ? updatedClient : c)));
+    setSelectedClient(updatedClient);
+  };
+
+  const handleNotifyCSM = (type: 'draft' | 'complete') => {
+    if (!selectedClient) return;
+    
+    const updated = {
+      ...selectedClient,
+      draftBuildNotified: type === 'draft' ? true : selectedClient.draftBuildNotified,
+      setupCompleteNotified: type === 'complete' ? true : selectedClient.setupCompleteNotified,
+    };
+    
+    handleUpdateClient(updated);
   };
 
   return (
@@ -186,6 +209,20 @@ export function ClientDashboard() {
                 <SelectItem value="completed">Completed</SelectItem>
               </SelectContent>
             </Select>
+
+            <Select value={csmFilter} onValueChange={setCsmFilter}>
+              <SelectTrigger className="w-[160px] bg-background">
+                <SelectValue placeholder="All CSMs" />
+              </SelectTrigger>
+              <SelectContent className="bg-popover">
+                <SelectItem value="all">All CSMs</SelectItem>
+                {CSM_LIST.map((csm) => (
+                  <SelectItem key={csm.id} value={csm.id}>
+                    {csm.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </header>
@@ -213,7 +250,7 @@ export function ClientDashboard() {
       </main>
 
       {/* Client Task Panel */}
-      {selectedClient && (
+      {selectedClient && !showIntakeForm && (
         <ClientTaskPanel
           client={selectedClient}
           tasks={getClientTasks(selectedClient.id)}
@@ -221,6 +258,17 @@ export function ClientDashboard() {
           onToggleTask={handleToggleTask}
           onAddTask={handleAddTask}
           onUpdateTask={handleUpdateTask}
+          onViewIntakeForm={() => setShowIntakeForm(true)}
+          onNotifyCSM={handleNotifyCSM}
+          onUpdateClient={handleUpdateClient}
+        />
+      )}
+
+      {/* Intake Form Modal */}
+      {showIntakeForm && selectedClient && (
+        <IntakeFormModal
+          client={selectedClient}
+          onClose={() => setShowIntakeForm(false)}
         />
       )}
     </div>

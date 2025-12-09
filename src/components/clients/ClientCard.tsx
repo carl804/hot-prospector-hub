@@ -1,5 +1,6 @@
-import { Building2, CheckCircle2, Clock, AlertTriangle, ChevronRight } from 'lucide-react';
-import { Client } from '@/types/client';
+import { Building2, CheckCircle2, Clock, AlertTriangle, ChevronRight, Calendar, User } from 'lucide-react';
+import { format } from 'date-fns';
+import { Client, CSM_LIST } from '@/types/client';
 import { Task } from '@/types/task';
 import { cn } from '@/lib/utils';
 import { isToday, isPast, startOfDay } from 'date-fns';
@@ -27,6 +28,7 @@ export function ClientCard({ client, tasks, onClick }: ClientCardProps) {
   }).length;
 
   const isComplete = client.status === 'completed' || progress === 100;
+  const csm = CSM_LIST.find((c) => c.id === client.assignedCsmId);
 
   return (
     <div
@@ -38,7 +40,7 @@ export function ClientCard({ client, tasks, onClick }: ClientCardProps) {
       )}
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
+      <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
           <div className={cn(
             'w-10 h-10 rounded-lg flex items-center justify-center',
@@ -62,8 +64,44 @@ export function ClientCard({ client, tasks, onClick }: ClientCardProps) {
         <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
       </div>
 
+      {/* CSM Badge */}
+      {csm && (
+        <div className="flex items-center gap-2 mb-3">
+          <div className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium text-primary-foreground', csm.color)}>
+            {csm.initials}
+          </div>
+          <span className="text-xs text-muted-foreground">{csm.name}</span>
+        </div>
+      )}
+
+      {/* Booking Status */}
+      <div className="flex items-center gap-3 mb-3 text-xs">
+        <div className={cn(
+          'flex items-center gap-1',
+          client.assessmentBooked ? 'text-success' : 'text-muted-foreground/50'
+        )}>
+          {client.assessmentBooked ? (
+            <CheckCircle2 className="w-3 h-3" />
+          ) : (
+            <Calendar className="w-3 h-3" />
+          )}
+          <span>Assessment</span>
+        </div>
+        <div className={cn(
+          'flex items-center gap-1',
+          client.onboardingBooked ? 'text-success' : 'text-muted-foreground/50'
+        )}>
+          {client.onboardingBooked ? (
+            <CheckCircle2 className="w-3 h-3" />
+          ) : (
+            <Calendar className="w-3 h-3" />
+          )}
+          <span>Onboarding</span>
+        </div>
+      </div>
+
       {/* Progress Bar */}
-      <div className="mb-4">
+      <div className="mb-3">
         <div className="flex items-center justify-between text-xs mb-1.5">
           <span className="text-muted-foreground">Progress</span>
           <span className="font-medium text-foreground">{completedTasks}/{totalTasks} tasks</span>
