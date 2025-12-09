@@ -1,5 +1,24 @@
 import { Task } from '@/types/task';
 
+export type PipelineStage = 
+  | 'welcome'
+  | 'intake_form_submitted'
+  | 'draft_build'
+  | 'assessment_booked'
+  | 'setup_in_progress'
+  | 'setup_complete'
+  | 'no_show';
+
+export const PIPELINE_STAGES: { id: PipelineStage; label: string }[] = [
+  { id: 'welcome', label: 'Welcome' },
+  { id: 'intake_form_submitted', label: 'Intake Form Submitted' },
+  { id: 'draft_build', label: 'Draft Build' },
+  { id: 'assessment_booked', label: 'Assessment Booked' },
+  { id: 'setup_in_progress', label: 'Setup In Progress' },
+  { id: 'setup_complete', label: 'Setup Complete' },
+  { id: 'no_show', label: 'No Show' },
+];
+
 export interface CSM {
   id: string;
   name: string;
@@ -16,6 +35,7 @@ export interface Client {
   contactPhone: string;
   startDate: string;
   status: 'active' | 'completed' | 'on_hold';
+  pipelineStage: PipelineStage;
   assignedCsmId: string;
   assessmentBooked: boolean;
   assessmentDate?: string;
@@ -191,6 +211,7 @@ export const CLIENTS: Client[] = [
     contactPhone: '(555) 123-4567',
     startDate: '2024-12-01',
     status: 'active',
+    pipelineStage: 'draft_build',
     assignedCsmId: 'csm-1',
     assessmentBooked: true,
     assessmentDate: '2024-12-05T14:00:00',
@@ -207,6 +228,7 @@ export const CLIENTS: Client[] = [
     contactPhone: '(555) 234-5678',
     startDate: '2024-12-03',
     status: 'active',
+    pipelineStage: 'setup_in_progress',
     assignedCsmId: 'csm-2',
     assessmentBooked: true,
     assessmentDate: '2024-12-07T10:00:00',
@@ -224,6 +246,7 @@ export const CLIENTS: Client[] = [
     contactPhone: '(555) 345-6789',
     startDate: '2024-11-28',
     status: 'active',
+    pipelineStage: 'welcome',
     assignedCsmId: 'csm-3',
     assessmentBooked: false,
     onboardingBooked: false,
@@ -239,6 +262,7 @@ export const CLIENTS: Client[] = [
     contactPhone: '(555) 456-7890',
     startDate: '2024-11-25',
     status: 'active',
+    pipelineStage: 'assessment_booked',
     assignedCsmId: 'csm-1',
     assessmentBooked: true,
     assessmentDate: '2024-12-02T09:00:00',
@@ -256,6 +280,7 @@ export const CLIENTS: Client[] = [
     contactPhone: '(555) 567-8901',
     startDate: '2024-12-05',
     status: 'active',
+    pipelineStage: 'intake_form_submitted',
     assignedCsmId: 'csm-2',
     assessmentBooked: false,
     onboardingBooked: false,
@@ -271,6 +296,7 @@ export const CLIENTS: Client[] = [
     contactPhone: '(555) 678-9012',
     startDate: '2024-11-15',
     status: 'completed',
+    pipelineStage: 'setup_complete',
     assignedCsmId: 'csm-3',
     assessmentBooked: true,
     assessmentDate: '2024-11-18T14:00:00',
