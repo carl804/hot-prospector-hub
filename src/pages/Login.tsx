@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, AlertCircle } from 'lucide-react';
 
 const errorMessages: Record<string, string> = {
+  user_not_in_ghl: 'Your account is not registered in the system. Please contact your administrator to be added as a team member.',
   unauthorized_domain: 'Your email domain is not authorized to access this application.',
   token_exchange_failed: 'Authentication failed. Please try again.',
   user_info_failed: 'Could not retrieve your account information.',
