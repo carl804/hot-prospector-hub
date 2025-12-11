@@ -79,16 +79,16 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border">
-      <SidebarHeader className="p-4">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border bg-sidebar">
+      <SidebarHeader className="p-4 border-b border-sidebar-border/50">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shrink-0 shadow-sm">
             <span className="text-primary-foreground font-bold text-sm">HP</span>
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
               <h1 className="text-sm font-semibold text-sidebar-foreground truncate">Hot Prospector</h1>
-              <p className="text-xs text-muted-foreground truncate">Task Manager</p>
+              <p className="text-xs text-sidebar-foreground/60 truncate">Task Manager</p>
             </div>
           )}
         </div>
@@ -135,13 +135,13 @@ export function AppSidebar() {
         {!collapsed && (
           <SidebarGroup className="mt-4">
             <div className="px-3 py-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
+              <p className="text-xs font-medium text-sidebar-foreground/50 uppercase tracking-wider mb-3">
                 Quick Stats
               </p>
               
               {/* Overdue Alert */}
               {stats.overdue > 0 && (
-                <div className="flex items-center gap-2 p-2 mb-2 rounded-lg bg-destructive/10">
+                <div className="flex items-center gap-2 p-2.5 mb-2 rounded-lg bg-destructive/10 dark:bg-destructive/20 border border-destructive/20">
                   <AlertTriangle className="w-4 h-4 text-destructive" />
                   <span className="text-xs font-medium text-destructive">
                     {stats.overdue} overdue
@@ -151,7 +151,7 @@ export function AppSidebar() {
 
               {/* Due Today */}
               {stats.dueToday > 0 && (
-                <div className="flex items-center gap-2 p-2 mb-2 rounded-lg bg-primary/10">
+                <div className="flex items-center gap-2 p-2.5 mb-2 rounded-lg bg-primary/10 dark:bg-primary/20 border border-primary/20">
                   <Clock className="w-4 h-4 text-primary" />
                   <span className="text-xs font-medium text-primary">
                     {stats.dueToday} due today
@@ -160,12 +160,12 @@ export function AppSidebar() {
               )}
 
               {/* Progress */}
-              <div className="mt-3">
-                <div className="flex items-center justify-between text-xs mb-1">
-                  <span className="text-muted-foreground">Completion</span>
-                  <span className="font-medium text-foreground">{stats.completionRate}%</span>
+              <div className="mt-4 p-3 rounded-lg bg-sidebar-accent/50 dark:bg-sidebar-accent">
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className="text-sidebar-foreground/70">Completion</span>
+                  <span className="font-semibold text-sidebar-foreground">{stats.completionRate}%</span>
                 </div>
-                <Progress value={stats.completionRate} className="h-1.5" />
+                <Progress value={stats.completionRate} className="h-2" />
               </div>
             </div>
           </SidebarGroup>

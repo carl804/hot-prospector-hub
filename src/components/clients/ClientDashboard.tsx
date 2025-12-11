@@ -129,37 +129,39 @@ export function ClientDashboard() {
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
       <header className="border-b border-border bg-card shrink-0">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between mb-4">
+        <div className="px-4 md:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
             <div>
-              <h1 className="text-xl font-semibold text-foreground">Client Setup Tasks</h1>
-              <p className="text-sm text-muted-foreground">Manage client onboarding</p>
+              <h1 className="text-lg md:text-xl font-semibold text-foreground">Client Setup Tasks</h1>
+              <p className="text-xs md:text-sm text-muted-foreground">Manage client onboarding</p>
             </div>
-            <Button className="gap-2">
+            <Button className="gap-2 self-start sm:self-auto">
               <Plus className="w-4 h-4" />
               New Client
             </Button>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-4 gap-3 mb-4">
-            <div className="bg-secondary/50 rounded-lg p-3">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+            <div className="bg-secondary/50 dark:bg-secondary/30 rounded-lg p-3 border border-border/50">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Building2 className="w-4 h-4" />
                 <span className="text-xs font-medium">Active Clients</span>
               </div>
-              <p className="text-2xl font-semibold text-foreground">{stats.activeClients}</p>
+              <p className="text-xl md:text-2xl font-semibold text-foreground">{stats.activeClients}</p>
             </div>
-            <div className="bg-secondary/50 rounded-lg p-3">
+            <div className="bg-secondary/50 dark:bg-secondary/30 rounded-lg p-3 border border-border/50">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Clock className="w-4 h-4" />
                 <span className="text-xs font-medium">Open Tasks</span>
               </div>
-              <p className="text-2xl font-semibold text-foreground">{stats.totalTasks}</p>
+              <p className="text-xl md:text-2xl font-semibold text-foreground">{stats.totalTasks}</p>
             </div>
             <div className={cn(
-              'rounded-lg p-3',
-              stats.overdue > 0 ? 'bg-destructive/10' : 'bg-secondary/50'
+              'rounded-lg p-3 border',
+              stats.overdue > 0 
+                ? 'bg-destructive/10 dark:bg-destructive/20 border-destructive/30' 
+                : 'bg-secondary/50 dark:bg-secondary/30 border-border/50'
             )}>
               <div className={cn(
                 'flex items-center gap-2 mb-1',
@@ -169,22 +171,22 @@ export function ClientDashboard() {
                 <span className="text-xs font-medium">Overdue</span>
               </div>
               <p className={cn(
-                'text-2xl font-semibold',
+                'text-xl md:text-2xl font-semibold',
                 stats.overdue > 0 ? 'text-destructive' : 'text-foreground'
               )}>{stats.overdue}</p>
             </div>
-            <div className="bg-primary/10 rounded-lg p-3">
+            <div className="bg-primary/10 dark:bg-primary/20 rounded-lg p-3 border border-primary/30">
               <div className="flex items-center gap-2 text-primary mb-1">
                 <Clock className="w-4 h-4" />
                 <span className="text-xs font-medium">Due Today</span>
               </div>
-              <p className="text-2xl font-semibold text-foreground">{stats.dueToday}</p>
+              <p className="text-xl md:text-2xl font-semibold text-foreground">{stats.dueToday}</p>
             </div>
           </div>
 
           {/* Filters */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1 max-w-sm">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="relative flex-1 max-w-full sm:max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 placeholder="Search clients..."
@@ -194,37 +196,39 @@ export function ClientDashboard() {
               />
             </div>
 
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-              <SelectTrigger className="w-[140px] bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                <SelectItem value="all">All Clients</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-3">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+                <SelectTrigger className="w-full sm:w-[140px] bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="all">All Clients</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <Select value={csmFilter} onValueChange={setCsmFilter}>
-              <SelectTrigger className="w-[160px] bg-background">
-                <SelectValue placeholder="All CSMs" />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                <SelectItem value="all">All CSMs</SelectItem>
-                {CSM_LIST.map((csm) => (
-                  <SelectItem key={csm.id} value={csm.id}>
-                    {csm.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={csmFilter} onValueChange={setCsmFilter}>
+                <SelectTrigger className="w-full sm:w-[160px] bg-background">
+                  <SelectValue placeholder="All CSMs" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="all">All CSMs</SelectItem>
+                  {CSM_LIST.map((csm) => (
+                    <SelectItem key={csm.id} value={csm.id}>
+                      {csm.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Client Grid */}
-      <main className="flex-1 overflow-auto px-6 py-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <main className="flex-1 overflow-auto px-4 md:px-6 py-4 md:py-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredClients.map((client) => (
             <ClientCard
               key={client.id}

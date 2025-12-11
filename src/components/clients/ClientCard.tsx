@@ -108,7 +108,7 @@ export function ClientCard({ client, tasks, onClick }: ClientCardProps) {
           <span className="text-muted-foreground">Progress</span>
           <span className="font-medium text-foreground">{completedTasks}/{totalTasks} tasks</span>
         </div>
-        <div className="h-2 bg-secondary rounded-full overflow-hidden">
+        <div className="h-2 bg-secondary dark:bg-secondary/50 rounded-full overflow-hidden">
           <div
             className={cn(
               'h-full rounded-full transition-all duration-500',
