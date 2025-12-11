@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { X } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, CalendarIcon } from 'lucide-react';
 import { Task, TASK_CATEGORIES, Priority } from '@/types/task';
+import { CLIENTS as ALL_CLIENTS } from '@/types/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,33 +12,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
-const CLIENTS = [
-  { id: 'client-1', name: 'ABC Marketing Agency' },
-  { id: 'client-2', name: 'Digital Growth Partners' },
-  { id: 'client-3', name: 'Peak Performance Media' },
-  { id: 'client-4', name: 'Summit Lead Generation' },
-  { id: 'client-5', name: 'Velocity Sales Pros' },
-  { id: 'client-6', name: 'Apex Digital Solutions' },
-];
+const CLIENTS = ALL_CLIENTS.map((c) => ({ id: c.id, name: c.name }));
 
 interface AddTaskModalProps {
   onClose: () => void;
   onAdd: (task: Omit<Task, 'id' | 'createdAt'>) => void;
+  preselectedClientId?: string;
 }
 
-export function AddTaskModal({ onClose, onAdd }: AddTaskModalProps) {
+export function AddTaskModal({ onClose, onAdd, preselectedClientId }: AddTaskModalProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [clientId, setClientId] = useState('');
-  const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
+  const [clientId, setClientId] = useState(preselectedClientId || '');
+  const [dueDate, setDueDate] = useState<Date | undefined>(new Date());
   const [priority, setPriority] = useState<Priority>('medium');
   const [category, setCategory] = useState('ghl');
 
+  useEffect(() => {
+    if (preselectedClientId) {
+      setClientId(preselectedClientId);
+    }
+  }, [preselectedClientId]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || !clientId) return;
+    if (!title.trim() || !clientId || !dueDate) return;
 
     const client = CLIENTS.find((c) => c.id === clientId);
     if (!client) return;
@@ -47,7 +55,7 @@ export function AddTaskModal({ onClose, onAdd }: AddTaskModalProps) {
       description: description.trim() || undefined,
       clientId,
       clientName: client.name,
-      dueDate: new Date(dueDate).toISOString(),
+      dueDate: dueDate.toISOString(),
       priority,
       status: 'todo',
       category,
@@ -109,12 +117,29 @@ export function AddTaskModal({ onClose, onAdd }: AddTaskModalProps) {
               <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2 block">
                 Due Date
               </label>
-              <Input
-                type="date"
-                value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="bg-background"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal bg-background',
+                      !dueDate && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dueDate ? format(dueDate, 'MMM d, yyyy') : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-popover" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dueDate}
+                    onSelect={setDueDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div>
@@ -171,7 +196,7 @@ export function AddTaskModal({ onClose, onAdd }: AddTaskModalProps) {
             <Button type="button" variant="outline" onClick={onClose} className="flex-1">
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" disabled={!title.trim() || !clientId}>
+            <Button type="submit" className="flex-1" disabled={!title.trim() || !clientId || !dueDate}>
               Add Task
             </Button>
           </div>

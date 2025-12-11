@@ -3,6 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Task } from '@/types/task';
 import { TaskCard } from './TaskCard';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
 interface TaskKanbanColumnProps {
@@ -11,14 +12,20 @@ interface TaskKanbanColumnProps {
   color: string;
   tasks: Task[];
   onTaskClick: (task: Task) => void;
+  selectedTaskIds?: Set<string>;
+  onToggleSelectTask?: (taskId: string) => void;
 }
 
 function SortableTaskCard({
   task,
   onTaskClick,
+  isSelected,
+  onToggleSelect,
 }: {
   task: Task;
   onTaskClick: (task: Task) => void;
+  isSelected: boolean;
+  onToggleSelect?: () => void;
 }) {
   const {
     attributes,
@@ -38,16 +45,42 @@ function SortableTaskCard({
     <div
       ref={setNodeRef}
       style={style}
-      {...listeners}
-      {...attributes}
-      className={cn(isDragging && 'opacity-50')}
+      className={cn('relative group', isDragging && 'opacity-50')}
     >
-      <TaskCard task={task} onToggleComplete={() => {}} onClick={() => onTaskClick(task)} />
+      {onToggleSelect && (
+        <div
+          className={cn(
+            'absolute -left-1 top-3 z-10 transition-opacity',
+            isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+          )}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleSelect();
+          }}
+        >
+          <Checkbox checked={isSelected} className="bg-background" />
+        </div>
+      )}
+      <div
+        {...listeners}
+        {...attributes}
+        className={cn(isSelected && 'ring-2 ring-primary rounded-xl')}
+      >
+        <TaskCard task={task} onToggleComplete={() => {}} onClick={() => onTaskClick(task)} />
+      </div>
     </div>
   );
 }
 
-export function TaskKanbanColumn({ id, title, color, tasks, onTaskClick }: TaskKanbanColumnProps) {
+export function TaskKanbanColumn({
+  id,
+  title,
+  color,
+  tasks,
+  onTaskClick,
+  selectedTaskIds = new Set(),
+  onToggleSelectTask,
+}: TaskKanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
   return (
@@ -67,7 +100,13 @@ export function TaskKanbanColumn({ id, title, color, tasks, onTaskClick }: TaskK
         )}
       >
         {tasks.map((task) => (
-          <SortableTaskCard key={task.id} task={task} onTaskClick={onTaskClick} />
+          <SortableTaskCard
+            key={task.id}
+            task={task}
+            onTaskClick={onTaskClick}
+            isSelected={selectedTaskIds.has(task.id)}
+            onToggleSelect={onToggleSelectTask ? () => onToggleSelectTask(task.id) : undefined}
+          />
         ))}
 
         {tasks.length === 0 && (

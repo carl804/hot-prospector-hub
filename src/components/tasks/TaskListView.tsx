@@ -1,14 +1,19 @@
 import { useMemo } from 'react';
 import { Task } from '@/types/task';
 import { TaskCard } from './TaskCard';
-import { isToday, isTomorrow, isPast, startOfDay, isThisWeek, format } from 'date-fns';
-import { AlertTriangle, Calendar, Clock, CheckCircle2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { isToday, isTomorrow, isPast, startOfDay, isThisWeek } from 'date-fns';
+import { AlertTriangle, Calendar, Clock, CheckCircle2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TaskListViewProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
   onToggleTask: (taskId: string) => void;
+  selectedTaskIds?: Set<string>;
+  onToggleSelectTask?: (taskId: string) => void;
+  onAddTaskForClient?: (clientId: string) => void;
 }
 
 interface TaskGroup {
@@ -19,7 +24,14 @@ interface TaskGroup {
   className?: string;
 }
 
-export function TaskListView({ tasks, onTaskClick, onToggleTask }: TaskListViewProps) {
+export function TaskListView({
+  tasks,
+  onTaskClick,
+  onToggleTask,
+  selectedTaskIds = new Set(),
+  onToggleSelectTask,
+  onAddTaskForClient,
+}: TaskListViewProps) {
   const groupedTasks = useMemo(() => {
     const groups: TaskGroup[] = [];
 
@@ -119,8 +131,38 @@ export function TaskListView({ tasks, onTaskClick, onToggleTask }: TaskListViewP
     return groups;
   }, [tasks]);
 
+  // Get unique clients for "Add Task" buttons
+  const uniqueClients = useMemo(() => {
+    const clientMap = new Map<string, { id: string; name: string }>();
+    tasks.forEach((task) => {
+      if (!clientMap.has(task.clientId)) {
+        clientMap.set(task.clientId, { id: task.clientId, name: task.clientName });
+      }
+    });
+    return Array.from(clientMap.values());
+  }, [tasks]);
+
   return (
     <div className="p-6 space-y-6 overflow-y-auto h-full">
+      {/* Quick Add Task Buttons */}
+      {onAddTaskForClient && uniqueClients.length > 0 && (
+        <div className="flex flex-wrap gap-2 pb-4 border-b border-border">
+          <span className="text-sm text-muted-foreground py-1">Quick add for:</span>
+          {uniqueClients.slice(0, 5).map((client) => (
+            <Button
+              key={client.id}
+              variant="outline"
+              size="sm"
+              onClick={() => onAddTaskForClient(client.id)}
+              className="gap-1"
+            >
+              <Plus className="w-3 h-3" />
+              {client.name}
+            </Button>
+          ))}
+        </div>
+      )}
+
       {groupedTasks.map((group) => (
         <div key={group.id}>
           <div className={cn('flex items-center gap-2 mb-3', group.className || 'text-foreground')}>
@@ -130,12 +172,29 @@ export function TaskListView({ tasks, onTaskClick, onToggleTask }: TaskListViewP
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {group.tasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onToggleComplete={() => onToggleTask(task.id)}
-                onClick={() => onTaskClick(task)}
-              />
+              <div key={task.id} className="relative group">
+                {onToggleSelectTask && (
+                  <div
+                    className={cn(
+                      'absolute -left-1 top-3 z-10 transition-opacity',
+                      selectedTaskIds.has(task.id) ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleSelectTask(task.id);
+                    }}
+                  >
+                    <Checkbox checked={selectedTaskIds.has(task.id)} className="bg-background" />
+                  </div>
+                )}
+                <div className={cn(selectedTaskIds.has(task.id) && 'ring-2 ring-primary rounded-xl')}>
+                  <TaskCard
+                    task={task}
+                    onToggleComplete={() => onToggleTask(task.id)}
+                    onClick={() => onTaskClick(task)}
+                  />
+                </div>
+              </div>
             ))}
           </div>
         </div>
