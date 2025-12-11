@@ -8,6 +8,8 @@ Add these environment variables in your Vercel project settings:
 |----------|-------------|
 | `GHL_API_KEY` | GoHighLevel API Key for accessing contacts, opportunities, tasks, etc. |
 | `GHL_LOCATION_ID` | GoHighLevel Location ID for your agency |
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID from Google Cloud Console |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret from Google Cloud Console |
 
 ## Optional Variables
 
@@ -16,6 +18,8 @@ Add these environment variables in your Vercel project settings:
 | `OPENAI_API_KEY` | OpenAI API Key for AI features |
 | `GOOGLE_SHEET_ID` | Google Sheet ID for data storage/logging |
 | `GOOGLE_SHEET_CREDENTIALS` | Google Service Account credentials (JSON string) |
+| `GOOGLE_REDIRECT_URI` | OAuth redirect URI (defaults to `https://yourdomain.com/api/auth/callback`) |
+| `ALLOWED_EMAIL_DOMAIN` | Email domain restriction (e.g., `hotprospector.com`) - leave empty to allow all |
 
 ## How to Add in Vercel
 
