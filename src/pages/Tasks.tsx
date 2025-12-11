@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, LayoutGrid, List, Plus, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
+import { Search, LayoutGrid, List, Plus, AlertTriangle, Clock, CheckCircle2, Building2 } from 'lucide-react';
 import { Task, TaskStatus, TASK_CATEGORIES } from '@/types/task';
 import { MOCK_TASKS } from '@/data/taskData';
 import { Button } from '@/components/ui/button';
@@ -25,8 +25,20 @@ export default function Tasks() {
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [clientFilter, setClientFilter] = useState('all');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+
+  // Get unique clients from tasks
+  const clients = useMemo(() => {
+    const clientMap = new Map<string, { id: string; name: string }>();
+    tasks.forEach((task) => {
+      if (!clientMap.has(task.clientId)) {
+        clientMap.set(task.clientId, { id: task.clientId, name: task.clientName });
+      }
+    });
+    return Array.from(clientMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [tasks]);
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
@@ -35,9 +47,10 @@ export default function Tasks() {
         task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         task.clientName.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
-      return matchesSearch && matchesCategory;
+      const matchesClient = clientFilter === 'all' || task.clientId === clientFilter;
+      return matchesSearch && matchesCategory && matchesClient;
     });
-  }, [tasks, searchQuery, categoryFilter]);
+  }, [tasks, searchQuery, categoryFilter, clientFilter]);
 
   // Stats
   const stats = useMemo(() => {
@@ -83,6 +96,16 @@ export default function Tasks() {
           : task
       )
     );
+  };
+
+  const handleReorderTasks = (reorderedTaskIds: string[], status: TaskStatus) => {
+    setTasks((prev) => {
+      const otherTasks = prev.filter((t) => t.status !== status);
+      const reorderedTasks = reorderedTaskIds
+        .map((id) => prev.find((t) => t.id === id))
+        .filter(Boolean) as Task[];
+      return [...otherTasks, ...reorderedTasks];
+    });
   };
 
   const handleUpdateTask = (updatedTask: Task) => {
@@ -176,6 +199,23 @@ export default function Tasks() {
             />
           </div>
 
+          <Select value={clientFilter} onValueChange={setClientFilter}>
+            <SelectTrigger className="w-[180px] bg-background">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-muted-foreground" />
+                <SelectValue placeholder="All Clients" />
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-popover">
+              <SelectItem value="all">All Clients</SelectItem>
+              {clients.map((client) => (
+                <SelectItem key={client.id} value={client.id}>
+                  {client.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-[160px] bg-background">
               <SelectValue placeholder="All Categories" />
@@ -220,6 +260,7 @@ export default function Tasks() {
             tasks={filteredTasks}
             onTaskClick={setSelectedTask}
             onUpdateTaskStatus={handleUpdateTaskStatus}
+            onReorderTasks={handleReorderTasks}
           />
         ) : (
           <TaskListView
