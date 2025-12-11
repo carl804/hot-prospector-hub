@@ -126,19 +126,14 @@ export function ClientDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col h-full bg-background">
       {/* Header */}
-      <header className="border-b border-border bg-card sticky top-0 z-30">
-        <div className="max-w-6xl mx-auto px-6 py-4">
+      <header className="border-b border-border bg-card shrink-0">
+        <div className="px-6 py-4">
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-sm">HP</span>
-              </div>
-              <div>
-                <h1 className="text-lg font-semibold text-foreground">Client Setup Tasks</h1>
-                <p className="text-sm text-muted-foreground">Hot Prospector</p>
-              </div>
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">Client Setup Tasks</h1>
+              <p className="text-sm text-muted-foreground">Manage client onboarding</p>
             </div>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
@@ -228,7 +223,7 @@ export function ClientDashboard() {
       </header>
 
       {/* Client Grid */}
-      <main className="max-w-6xl mx-auto px-6 py-6">
+      <main className="flex-1 overflow-auto px-6 py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredClients.map((client) => (
             <ClientCard
