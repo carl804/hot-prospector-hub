@@ -118,12 +118,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const googleUser: GoogleUserInfo = await userResponse.json();
 
-    // Verify user exists in GHL
-    const ghlUser = await verifyGHLUser(googleUser.email);
+    // Check if user is in admin whitelist (bypasses GHL check)
+    const adminEmails = process.env.ADMIN_EMAILS?.split(',').map(e => e.trim().toLowerCase()) || [];
+    const isAdmin = adminEmails.includes(googleUser.email.toLowerCase());
 
-    if (!ghlUser) {
-      console.log(`Access denied for ${googleUser.email} - not found in GHL`);
-      return res.redirect('/login?error=user_not_in_ghl');
+    let ghlUser: GHLUser | null = null;
+
+    if (!isAdmin) {
+      // Verify user exists in GHL
+      ghlUser = await verifyGHLUser(googleUser.email);
+
+      if (!ghlUser) {
+        console.log(`Access denied for ${googleUser.email} - not found in GHL`);
+        return res.redirect('/login?error=user_not_in_ghl');
+      }
+    } else {
+      console.log(`Admin bypass for ${googleUser.email}`);
     }
 
     // Create session with GHL user data
