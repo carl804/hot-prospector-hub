@@ -145,6 +145,28 @@
     @apply border-border;
   }
 
+  /* Smooth theme transitions */
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  /* Apply smooth transitions to theme-sensitive elements */
+  html,
+  body,
+  .bg-background,
+  .bg-card,
+  .bg-popover,
+  .bg-sidebar,
+  .bg-secondary,
+  .bg-muted,
+  .bg-accent {
+    transition: background-color 0.2s ease-in-out, color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', system-ui, sans-serif;
