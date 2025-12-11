@@ -1,4 +1,4 @@
-import { Building2, ListTodo, AlertTriangle, Clock } from 'lucide-react';
+import { Building2, ListTodo, AlertTriangle, Clock, Activity } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import { useMemo } from 'react';
@@ -68,6 +68,13 @@ export function AppSidebar() {
       icon: ListTodo,
       badge: stats.totalTasks,
       badgeVariant: stats.overdue > 0 ? 'destructive' as const : 'default' as const,
+    },
+    { 
+      title: 'Activity', 
+      url: '/activity', 
+      icon: Activity,
+      badge: 0,
+      badgeVariant: 'default' as const,
     },
   ];
 
