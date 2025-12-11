@@ -2,6 +2,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { GHLSyncStatus } from '@/components/GHLSyncStatus';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { UserMenu } from '@/components/auth/UserMenu';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ export function AppLayout({ children }: AppLayoutProps) {
             <div className="flex items-center gap-1 md:gap-2">
               <GHLSyncStatus />
               <ThemeToggle />
+              <UserMenu />
             </div>
           </header>
           <div className="flex-1 overflow-auto bg-background">
