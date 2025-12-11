@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   DndContext,
   DragOverlay,
@@ -8,8 +8,13 @@ import {
   useSensors,
   DragEndEvent,
   DragStartEvent,
+  DragOverEvent,
 } from '@dnd-kit/core';
-import { useState } from 'react';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
 import { Task, TaskStatus } from '@/types/task';
 import { TaskKanbanColumn } from './TaskKanbanColumn';
 import { TaskCard } from './TaskCard';
@@ -18,6 +23,7 @@ interface TaskKanbanBoardProps {
   tasks: Task[];
   onTaskClick: (task: Task) => void;
   onUpdateTaskStatus: (taskId: string, newStatus: TaskStatus) => void;
+  onReorderTasks: (reorderedTaskIds: string[], status: TaskStatus) => void;
 }
 
 const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
@@ -26,7 +32,12 @@ const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
   { id: 'completed', title: 'Completed', color: 'bg-success' },
 ];
 
-export function TaskKanbanBoard({ tasks, onTaskClick, onUpdateTaskStatus }: TaskKanbanBoardProps) {
+export function TaskKanbanBoard({
+  tasks,
+  onTaskClick,
+  onUpdateTaskStatus,
+  onReorderTasks,
+}: TaskKanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const sensors = useSensors(
@@ -57,12 +68,14 @@ export function TaskKanbanBoard({ tasks, onTaskClick, onUpdateTaskStatus }: Task
 
     const taskId = active.id as string;
     const overId = over.id as string;
+    const activeTask = tasks.find((t) => t.id === taskId);
+
+    if (!activeTask) return;
 
     // Check if dropped on a column
     const column = COLUMNS.find((c) => c.id === overId);
     if (column) {
-      const task = tasks.find((t) => t.id === taskId);
-      if (task && task.status !== column.id) {
+      if (activeTask.status !== column.id) {
         onUpdateTaskStatus(taskId, column.id);
       }
       return;
@@ -71,9 +84,22 @@ export function TaskKanbanBoard({ tasks, onTaskClick, onUpdateTaskStatus }: Task
     // Check if dropped on another task
     const overTask = tasks.find((t) => t.id === overId);
     if (overTask) {
-      const task = tasks.find((t) => t.id === taskId);
-      if (task && task.status !== overTask.status) {
+      // If moving to a different column
+      if (activeTask.status !== overTask.status) {
         onUpdateTaskStatus(taskId, overTask.status);
+      } else {
+        // Reorder within the same column
+        const columnTasks = tasksByStatus[activeTask.status];
+        const oldIndex = columnTasks.findIndex((t) => t.id === taskId);
+        const newIndex = columnTasks.findIndex((t) => t.id === overId);
+
+        if (oldIndex !== newIndex) {
+          const reordered = arrayMove(columnTasks, oldIndex, newIndex);
+          onReorderTasks(
+            reordered.map((t) => t.id),
+            activeTask.status
+          );
+        }
       }
     }
   };
@@ -86,16 +112,24 @@ export function TaskKanbanBoard({ tasks, onTaskClick, onUpdateTaskStatus }: Task
       onDragEnd={handleDragEnd}
     >
       <div className="flex gap-4 p-6 h-full overflow-x-auto kanban-scrollbar">
-        {COLUMNS.map((column) => (
-          <TaskKanbanColumn
-            key={column.id}
-            id={column.id}
-            title={column.title}
-            color={column.color}
-            tasks={tasksByStatus[column.id]}
-            onTaskClick={onTaskClick}
-          />
-        ))}
+        {COLUMNS.map((column) => {
+          const columnTasks = tasksByStatus[column.id];
+          return (
+            <SortableContext
+              key={column.id}
+              items={columnTasks.map((t) => t.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <TaskKanbanColumn
+                id={column.id}
+                title={column.title}
+                color={column.color}
+                tasks={columnTasks}
+                onTaskClick={onTaskClick}
+              />
+            </SortableContext>
+          );
+        })}
       </div>
 
       <DragOverlay>

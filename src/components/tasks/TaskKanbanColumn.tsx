@@ -1,5 +1,6 @@
 import { useDroppable } from '@dnd-kit/core';
-import { useDraggable } from '@dnd-kit/core';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Task } from '@/types/task';
 import { TaskCard } from './TaskCard';
 import { cn } from '@/lib/utils';
@@ -12,22 +13,26 @@ interface TaskKanbanColumnProps {
   onTaskClick: (task: Task) => void;
 }
 
-function DraggableTaskCard({
+function SortableTaskCard({
   task,
   onTaskClick,
 }: {
   task: Task;
   onTaskClick: (task: Task) => void;
 }) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-    id: task.id,
-  });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
 
-  const style = transform
-    ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-      }
-    : undefined;
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   return (
     <div
@@ -62,7 +67,7 @@ export function TaskKanbanColumn({ id, title, color, tasks, onTaskClick }: TaskK
         )}
       >
         {tasks.map((task) => (
-          <DraggableTaskCard key={task.id} task={task} onTaskClick={onTaskClick} />
+          <SortableTaskCard key={task.id} task={task} onTaskClick={onTaskClick} />
         ))}
 
         {tasks.length === 0 && (
