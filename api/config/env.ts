@@ -12,6 +12,12 @@ export const ENV = {
   // Google Sheets Configuration
   GOOGLE_SHEET_ID: process.env.GOOGLE_SHEET_ID || '',
   GOOGLE_SHEET_CREDENTIALS: process.env.GOOGLE_SHEET_CREDENTIALS || '',
+  
+  // Google OAuth Configuration
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID || '',
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET || '',
+  GOOGLE_REDIRECT_URI: process.env.GOOGLE_REDIRECT_URI || '',
+  ALLOWED_EMAIL_DOMAIN: process.env.ALLOWED_EMAIL_DOMAIN || '',
 } as const;
 
 // Validation helper
@@ -36,4 +42,9 @@ export function isOpenAIConfigured(): boolean {
 // Check if Google Sheets is configured
 export function isGoogleSheetsConfigured(): boolean {
   return !!ENV.GOOGLE_SHEET_ID && !!ENV.GOOGLE_SHEET_CREDENTIALS;
+}
+
+// Check if Google OAuth is configured
+export function isGoogleOAuthConfigured(): boolean {
+  return !!ENV.GOOGLE_CLIENT_ID && !!ENV.GOOGLE_CLIENT_SECRET;
 }

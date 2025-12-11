@@ -40,6 +40,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       configured: !!process.env.GOOGLE_SHEET_CREDENTIALS,
       required: false,
     },
+    GOOGLE_CLIENT_ID: {
+      configured: !!process.env.GOOGLE_CLIENT_ID,
+      required: true,
+    },
+    GOOGLE_CLIENT_SECRET: {
+      configured: !!process.env.GOOGLE_CLIENT_SECRET,
+      required: true,
+    },
+    ALLOWED_EMAIL_DOMAIN: {
+      configured: !!process.env.ALLOWED_EMAIL_DOMAIN,
+      required: false,
+    },
   };
 
   const requiredMissing = Object.entries(envVars)
