@@ -1,9 +1,24 @@
 import { useState, useMemo } from 'react';
-import { Search, LayoutGrid, List, Plus, AlertTriangle, Clock, CheckCircle2, Building2 } from 'lucide-react';
-import { Task, TaskStatus, TASK_CATEGORIES } from '@/types/task';
+import {
+  Search,
+  LayoutGrid,
+  List,
+  Plus,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  Building2,
+  CalendarIcon,
+  X,
+  Flag,
+  Trash2,
+  CheckSquare,
+} from 'lucide-react';
+import { Task, TaskStatus, TASK_CATEGORIES, Priority } from '@/types/task';
 import { MOCK_TASKS } from '@/data/taskData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -11,12 +26,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { TaskKanbanBoard } from '@/components/tasks/TaskKanbanBoard';
 import { TaskListView } from '@/components/tasks/TaskListView';
 import { TaskDetail } from '@/components/tasks/TaskDetail';
 import { AddTaskModal } from '@/components/tasks/AddTaskModal';
 import { cn } from '@/lib/utils';
-import { isToday, isPast, startOfDay } from 'date-fns';
+import { isToday, isPast, startOfDay, isWithinInterval, format, endOfDay } from 'date-fns';
+import { DateRange } from 'react-day-picker';
+import { toast } from 'sonner';
 
 type ViewMode = 'kanban' | 'list';
 
@@ -26,8 +49,12 @@ export default function Tasks() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [clientFilter, setClientFilter] = useState('all');
+  const [priorityFilter, setPriorityFilter] = useState('all');
+  const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [preselectedClientId, setPreselectedClientId] = useState<string | undefined>();
 
   // Get unique clients from tasks
   const clients = useMemo(() => {
@@ -48,9 +75,25 @@ export default function Tasks() {
         task.clientName.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = categoryFilter === 'all' || task.category === categoryFilter;
       const matchesClient = clientFilter === 'all' || task.clientId === clientFilter;
-      return matchesSearch && matchesCategory && matchesClient;
+      const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
+
+      // Date range filter
+      let matchesDateRange = true;
+      if (dateRange?.from) {
+        const taskDate = new Date(task.dueDate);
+        if (dateRange.to) {
+          matchesDateRange = isWithinInterval(taskDate, {
+            start: startOfDay(dateRange.from),
+            end: endOfDay(dateRange.to),
+          });
+        } else {
+          matchesDateRange = taskDate >= startOfDay(dateRange.from);
+        }
+      }
+
+      return matchesSearch && matchesCategory && matchesClient && matchesPriority && matchesDateRange;
     });
-  }, [tasks, searchQuery, categoryFilter, clientFilter]);
+  }, [tasks, searchQuery, categoryFilter, clientFilter, priorityFilter, dateRange]);
 
   // Stats
   const stats = useMemo(() => {
@@ -121,6 +164,71 @@ export default function Tasks() {
     };
     setTasks((prev) => [task, ...prev]);
     setShowAddModal(false);
+    setPreselectedClientId(undefined);
+    toast.success('Task added successfully');
+  };
+
+  // Bulk selection handlers
+  const handleToggleSelectTask = (taskId: string) => {
+    setSelectedTaskIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(taskId)) {
+        newSet.delete(taskId);
+      } else {
+        newSet.add(taskId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedTaskIds.size === filteredTasks.length) {
+      setSelectedTaskIds(new Set());
+    } else {
+      setSelectedTaskIds(new Set(filteredTasks.map((t) => t.id)));
+    }
+  };
+
+  const handleBulkUpdateStatus = (newStatus: TaskStatus) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        selectedTaskIds.has(task.id)
+          ? {
+              ...task,
+              status: newStatus,
+              completedAt: newStatus === 'completed' ? new Date().toISOString() : undefined,
+            }
+          : task
+      )
+    );
+    toast.success(`${selectedTaskIds.size} tasks updated to ${newStatus.replace('_', ' ')}`);
+    setSelectedTaskIds(new Set());
+  };
+
+  const handleBulkUpdateCategory = (newCategory: string) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        selectedTaskIds.has(task.id) ? { ...task, category: newCategory } : task
+      )
+    );
+    const categoryName = TASK_CATEGORIES.find((c) => c.id === newCategory)?.name || newCategory;
+    toast.success(`${selectedTaskIds.size} tasks updated to ${categoryName}`);
+    setSelectedTaskIds(new Set());
+  };
+
+  const handleBulkDelete = () => {
+    setTasks((prev) => prev.filter((task) => !selectedTaskIds.has(task.id)));
+    toast.success(`${selectedTaskIds.size} tasks deleted`);
+    setSelectedTaskIds(new Set());
+  };
+
+  const handleAddTaskForClient = (clientId: string) => {
+    setPreselectedClientId(clientId);
+    setShowAddModal(true);
+  };
+
+  const clearDateFilter = () => {
+    setDateRange(undefined);
   };
 
   return (
@@ -187,8 +295,8 @@ export default function Tasks() {
           </div>
         </div>
 
-        {/* Filters & View Toggle */}
-        <div className="flex items-center gap-3">
+        {/* Filters Row 1 */}
+        <div className="flex items-center gap-3 mb-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
@@ -230,7 +338,67 @@ export default function Tasks() {
             </SelectContent>
           </Select>
 
-          <div className="flex items-center border border-border rounded-lg overflow-hidden">
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="w-[140px] bg-background">
+              <div className="flex items-center gap-2">
+                <Flag className="w-4 h-4 text-muted-foreground" />
+                <SelectValue placeholder="Priority" />
+              </div>
+            </SelectTrigger>
+            <SelectContent className="bg-popover">
+              <SelectItem value="all">All Priorities</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="low">Low</SelectItem>
+            </SelectContent>
+          </Select>
+
+          {/* Date Range Picker */}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  'w-[200px] justify-start text-left font-normal bg-background',
+                  !dateRange && 'text-muted-foreground'
+                )}
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateRange?.from ? (
+                  dateRange.to ? (
+                    <>
+                      {format(dateRange.from, 'MMM d')} - {format(dateRange.to, 'MMM d')}
+                    </>
+                  ) : (
+                    format(dateRange.from, 'MMM d, yyyy')
+                  )
+                ) : (
+                  <span>Due Date Range</span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-popover" align="start">
+              <Calendar
+                initialFocus
+                mode="range"
+                defaultMonth={dateRange?.from}
+                selected={dateRange}
+                onSelect={setDateRange}
+                numberOfMonths={2}
+                className="p-3 pointer-events-auto"
+              />
+              {dateRange && (
+                <div className="p-3 border-t border-border">
+                  <Button variant="ghost" size="sm" onClick={clearDateFilter} className="w-full">
+                    <X className="w-4 h-4 mr-2" />
+                    Clear Date Filter
+                  </Button>
+                </div>
+              )}
+            </PopoverContent>
+          </Popover>
+
+          <div className="flex items-center border border-border rounded-lg overflow-hidden ml-auto">
             <Button
               variant={viewMode === 'kanban' ? 'default' : 'ghost'}
               size="sm"
@@ -251,6 +419,64 @@ export default function Tasks() {
             </Button>
           </div>
         </div>
+
+        {/* Bulk Actions Bar */}
+        {selectedTaskIds.size > 0 && (
+          <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg animate-fade-in">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={selectedTaskIds.size === filteredTasks.length}
+                onCheckedChange={handleSelectAll}
+              />
+              <span className="text-sm font-medium text-foreground">
+                {selectedTaskIds.size} selected
+              </span>
+            </div>
+            <div className="flex items-center gap-2 ml-4">
+              <Select onValueChange={handleBulkUpdateStatus}>
+                <SelectTrigger className="w-[140px] h-8 text-xs bg-background">
+                  <SelectValue placeholder="Set Status" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  <SelectItem value="todo">To Do</SelectItem>
+                  <SelectItem value="in_progress">In Progress</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select onValueChange={handleBulkUpdateCategory}>
+                <SelectTrigger className="w-[150px] h-8 text-xs bg-background">
+                  <SelectValue placeholder="Set Category" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {TASK_CATEGORIES.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                className="h-8 gap-1"
+              >
+                <Trash2 className="w-3 h-3" />
+                Delete
+              </Button>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedTaskIds(new Set())}
+              className="ml-auto h-8"
+            >
+              Clear Selection
+            </Button>
+          </div>
+        )}
       </header>
 
       {/* Content */}
@@ -261,12 +487,17 @@ export default function Tasks() {
             onTaskClick={setSelectedTask}
             onUpdateTaskStatus={handleUpdateTaskStatus}
             onReorderTasks={handleReorderTasks}
+            selectedTaskIds={selectedTaskIds}
+            onToggleSelectTask={handleToggleSelectTask}
           />
         ) : (
           <TaskListView
             tasks={filteredTasks}
             onTaskClick={setSelectedTask}
             onToggleTask={handleToggleTask}
+            selectedTaskIds={selectedTaskIds}
+            onToggleSelectTask={handleToggleSelectTask}
+            onAddTaskForClient={handleAddTaskForClient}
           />
         )}
       </div>
@@ -282,7 +513,14 @@ export default function Tasks() {
 
       {/* Add Task Modal */}
       {showAddModal && (
-        <AddTaskModal onClose={() => setShowAddModal(false)} onAdd={handleAddTask} />
+        <AddTaskModal
+          onClose={() => {
+            setShowAddModal(false);
+            setPreselectedClientId(undefined);
+          }}
+          onAdd={handleAddTask}
+          preselectedClientId={preselectedClientId}
+        />
       )}
     </div>
   );

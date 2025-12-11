@@ -8,7 +8,6 @@ import {
   useSensors,
   DragEndEvent,
   DragStartEvent,
-  DragOverEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -24,6 +23,8 @@ interface TaskKanbanBoardProps {
   onTaskClick: (task: Task) => void;
   onUpdateTaskStatus: (taskId: string, newStatus: TaskStatus) => void;
   onReorderTasks: (reorderedTaskIds: string[], status: TaskStatus) => void;
+  selectedTaskIds?: Set<string>;
+  onToggleSelectTask?: (taskId: string) => void;
 }
 
 const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
@@ -37,6 +38,8 @@ export function TaskKanbanBoard({
   onTaskClick,
   onUpdateTaskStatus,
   onReorderTasks,
+  selectedTaskIds = new Set(),
+  onToggleSelectTask,
 }: TaskKanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -126,6 +129,8 @@ export function TaskKanbanBoard({
                 color={column.color}
                 tasks={columnTasks}
                 onTaskClick={onTaskClick}
+                selectedTaskIds={selectedTaskIds}
+                onToggleSelectTask={onToggleSelectTask}
               />
             </SortableContext>
           );
