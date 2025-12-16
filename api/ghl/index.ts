@@ -65,7 +65,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     switch (action) {
       // ============ CONTACTS ============
       case 'contacts.list': {
-        const searchParams = new URLSearchParams({ locationId: GHL_LOCATION_ID });
+        const searchParams = new URLSearchParams({ location_id: GHL_LOCATION_ID });
         if (params?.limit) searchParams.set('limit', String(params.limit));
         if (params?.skip) searchParams.set('skip', String(params.skip));
         if (params?.query) searchParams.set('query', String(params.query));
@@ -78,7 +78,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'contacts.create':
         endpoint = '/contacts/';
         method = 'POST';
-        body = JSON.stringify({ ...data, locationId: GHL_LOCATION_ID });
+        body = JSON.stringify({ ...data, location_id: GHL_LOCATION_ID });
         break;
       case 'contacts.update':
         endpoint = `/contacts/${id}`;
@@ -92,7 +92,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // ============ OPPORTUNITIES ============
       case 'opportunities.list': {
-        const searchParams = new URLSearchParams({ locationId: GHL_LOCATION_ID });
+        const searchParams = new URLSearchParams({ location_id: GHL_LOCATION_ID });
         if (params?.pipelineId) searchParams.set('pipelineId', String(params.pipelineId));
         if (params?.stageId) searchParams.set('stageId', String(params.stageId));
         if (params?.status) searchParams.set('status', String(params.status));
@@ -106,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'opportunities.create':
         endpoint = '/opportunities/';
         method = 'POST';
-        body = JSON.stringify({ ...data, locationId: GHL_LOCATION_ID });
+        body = JSON.stringify({ ...data, location_id: GHL_LOCATION_ID });
         break;
       case 'opportunities.update':
         endpoint = `/opportunities/${id}`;
