@@ -34,32 +34,30 @@ export function ClientDashboard() {
   const [csmFilter, setCsmFilter] = useState('all');
 
   const clients: Client[] = useMemo(() => {
-    if (!((opportunitiesData as any)?.opportunities || [])) return [];
+    if (!(opportunitiesData as any)?.opportunities) return [];
     
-    return opportunitiesData.data.map((opp) => ({
+    return ((opportunitiesData as any)?.opportunities || []).map((opp: any) => ({
       id: opp.id,
       name: opp.name,
-      contactName: opp.contact?.firstName && opp.contact?.lastName 
-        ? `${opp.contact.firstName} ${opp.contact.lastName}`
-        : opp.contact?.contactName || 'Unknown Contact',
+      contactName: opp.contact?.name || 'Unknown Contact',
       contactEmail: opp.contact?.email || '',
       contactPhone: opp.contact?.phone || '',
-      startDate: opp.dateAdded,
+      startDate: opp.createdAt,
       status: opp.status === 'won' ? 'completed' : opp.status === 'lost' || opp.status === 'abandoned' ? 'on_hold' : 'active',
-      pipelineStage: opp.pipelineStageId as any, // Will map to proper stage later
+      pipelineStage: opp.pipelineStageId as any,
       assignedCsmId: opp.assignedTo || 'csm-1',
       assessmentBooked: false,
       onboardingBooked: false,
       draftBuildNotified: false,
       setupCompleteNotified: false,
       intakeForm: {
-        submittedAt: opp.dateAdded,
+        submittedAt: opp.createdAt,
         agencyName: opp.name,
-        firstName: opp.contact?.firstName || '',
-        lastName: opp.contact?.lastName || '',
+        firstName: '',
+        lastName: '',
         email: opp.contact?.email || '',
         phone: opp.contact?.phone || '',
-      } as any, // Simplified intakeForm
+      } as any,
     }));
   }, [opportunitiesData]);
 
