@@ -32,4 +32,4 @@ export function ClientDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [csmFilter, setCsmFilter] = useState('all');
-
+}
