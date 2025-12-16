@@ -34,7 +34,7 @@ export function ClientDashboard() {
   const [csmFilter, setCsmFilter] = useState('all');
 
   const clients: Client[] = useMemo(() => {
-    if (!opportunitiesData?.data) return [];
+    if (!((opportunitiesData as any)?.opportunities || [])) return [];
     
     return opportunitiesData.data.map((opp) => ({
       id: opp.id,
