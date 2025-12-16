@@ -75,7 +75,7 @@ export function useCompleteGHLTask() {
 
 export function useAllGHLTasks() {
   const { data: contactsData, isLoading: isLoadingContacts } = useGHLContacts();
-  const contacts = contactsData?.data || [];
+  const contacts = ((contactsData as any)?.contacts || []);
   const contactIds = contacts.map((c) => c.id);
 
   const tasksQuery = useQuery({
