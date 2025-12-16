@@ -23,7 +23,7 @@ import { useAllGHLTasks } from '@/hooks/useGHLTasks';
 type StatusFilter = 'all' | 'active' | 'completed';
 
 export function ClientDashboard() {
-  const { data: opportunitiesData, isLoading: isLoadingOpportunities } = useGHLOpportunities();
+  const { data: opportunitiesData, isLoading: isLoadingOpportunities } = useGHLOpportunities({ pipelineId: "QNloaHE61P6yedF6jEzk" });
   const { data: tasksData = [], isLoading: isLoadingTasks } = useAllGHLTasks();
   const isLoading = isLoadingOpportunities || isLoadingTasks;
 
