@@ -23,7 +23,7 @@ import { useAllGHLTasks } from '@/hooks/useGHLTasks';
 type StatusFilter = 'all' | 'active' | 'completed';
 
 export function ClientDashboard() {
-  const { data: opportunitiesData, isLoading: isLoadingOpportunities } = useGHLOpportunities();
+  const { data: opportunitiesData, isLoading: isLoadingOpportunities } = useGHLOpportunities({ pipelineId: "QNloaHE61P6yedF6jEzk" });
   const { data: tasksData = [], isLoading: isLoadingTasks } = useAllGHLTasks();
   const isLoading = isLoadingOpportunities || isLoadingTasks;
 
@@ -34,10 +34,12 @@ export function ClientDashboard() {
   const [csmFilter, setCsmFilter] = useState('all');
 
   const clients: Client[] = useMemo(() => {
+    const allOpportunities = ((opportunitiesData as any)?.opportunities || []);
+    const filtered = allOpportunities.filter((opp: any) => opp.pipelineId === "QNloaHE61P6yedF6jEzk");
+    if (filtered.length === 0) return [];
     if (!(opportunitiesData as any)?.opportunities) return [];
     
-    const opportunities = ((opportunitiesData as any)?.opportunities || []).filter((opp: any) => opp.pipelineId === "QNloaHE61P6yedF6jEzk");
-    return opportunities.map((opp: any) => ({
+    return filtered.map((opp: any) => ({
       id: opp.id,
       name: opp.name,
       contactName: opp.contact?.name || 'Unknown Contact',
