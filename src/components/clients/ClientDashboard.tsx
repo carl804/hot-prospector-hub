@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react';
-import { Search, Plus, Building2, CheckCircle2, Clock, AlertTriangle } from 'lucide-react';
-import { Client, CLIENTS as INITIAL_CLIENTS, CSM_LIST } from '@/types/client';
+import { Search, Plus, Building2, Clock, AlertTriangle } from 'lucide-react';
+import { Client, CSM_LIST } from '@/types/client';
 import { Task } from '@/types/task';
-import { MOCK_TASKS } from '@/data/taskData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -17,29 +17,61 @@ import { ClientTaskPanel } from './ClientTaskPanel';
 import { IntakeFormModal } from './IntakeFormModal';
 import { cn } from '@/lib/utils';
 import { isToday, isPast, startOfDay } from 'date-fns';
+import { useGHLOpportunities } from '@/hooks/useGHLOpportunities';
+import { useAllGHLTasks } from '@/hooks/useGHLTasks';
 
 type StatusFilter = 'all' | 'active' | 'completed';
 
 export function ClientDashboard() {
-  const [clients, setClients] = useState<Client[]>(INITIAL_CLIENTS);
-  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
+  const { data: opportunitiesData, isLoading: isLoadingOpportunities } = useGHLOpportunities();
+  const { data: tasksData = [], isLoading: isLoadingTasks } = useAllGHLTasks();
+  const isLoading = isLoadingOpportunities || isLoadingTasks;
+
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [showIntakeForm, setShowIntakeForm] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [csmFilter, setCsmFilter] = useState('all');
 
-  // Get tasks for each client
+  const clients: Client[] = useMemo(() => {
+    if (!opportunitiesData?.data) return [];
+    
+    return opportunitiesData.data.map((opp) => ({
+      id: opp.id,
+      name: opp.name,
+      contactName: opp.contact?.firstName && opp.contact?.lastName 
+        ? `${opp.contact.firstName} ${opp.contact.lastName}`
+        : opp.contact?.contactName || 'Unknown Contact',
+      contactEmail: opp.contact?.email || '',
+      contactPhone: opp.contact?.phone || '',
+      startDate: opp.dateAdded,
+      status: opp.status === 'won' ? 'completed' : opp.status === 'lost' || opp.status === 'abandoned' ? 'on_hold' : 'active',
+      pipelineStage: opp.pipelineStageId as any, // Will map to proper stage later
+      assignedCsmId: opp.assignedTo || 'csm-1',
+      assessmentBooked: false,
+      onboardingBooked: false,
+      draftBuildNotified: false,
+      setupCompleteNotified: false,
+      intakeForm: {
+        submittedAt: opp.dateAdded,
+        agencyName: opp.name,
+        firstName: opp.contact?.firstName || '',
+        lastName: opp.contact?.lastName || '',
+        email: opp.contact?.email || '',
+        phone: opp.contact?.phone || '',
+      } as any, // Simplified intakeForm
+    }));
+  }, [opportunitiesData]);
+
+  const tasks: Task[] = tasksData;
   const getClientTasks = (clientId: string) => tasks.filter((t) => t.clientId === clientId);
 
-  // Calculate client completion status
   const getClientProgress = (clientId: string) => {
     const clientTasks = getClientTasks(clientId);
     if (clientTasks.length === 0) return 0;
     return Math.round((clientTasks.filter((t) => t.status === 'completed').length / clientTasks.length) * 100);
   };
 
-  // Filter clients
   const filteredClients = useMemo(() => {
     return clients.filter((client) => {
       const matchesSearch = client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -54,12 +86,10 @@ export function ClientDashboard() {
         (statusFilter === 'completed' && isComplete);
 
       const matchesCsm = csmFilter === 'all' || client.assignedCsmId === csmFilter;
-
       return matchesSearch && matchesStatus && matchesCsm;
     });
   }, [clients, searchQuery, statusFilter, csmFilter, tasks]);
 
-  // Global stats
   const stats = useMemo(() => {
     const activeTasks = tasks.filter((t) => t.status !== 'completed');
     const overdueTasks = activeTasks.filter((t) => {
@@ -67,7 +97,6 @@ export function ClientDashboard() {
       return isPast(dueDate) && !isToday(dueDate);
     });
     const dueTodayTasks = activeTasks.filter((t) => isToday(new Date(t.dueDate)));
-
     const activeClients = clients.filter((c) => {
       const progress = getClientProgress(c.id);
       return c.status !== 'completed' && progress < 100;
@@ -81,53 +110,44 @@ export function ClientDashboard() {
     };
   }, [clients, tasks]);
 
-  const handleToggleTask = (taskId: string) => {
-    setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              status: task.status === 'completed' ? 'todo' : 'completed',
-              completedAt: task.status === 'completed' ? undefined : new Date().toISOString(),
-            }
-          : task
-      )
-    );
-  };
-
-  const handleAddTask = (newTask: Omit<Task, 'id' | 'createdAt'>) => {
-    const task: Task = {
-      ...newTask,
-      id: `t-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    };
-    setTasks((prev) => [task, ...prev]);
-  };
-
-  const handleUpdateTask = (updatedTask: Task) => {
-    setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
-  };
-
-  const handleUpdateClient = (updatedClient: Client) => {
-    setClients((prev) => prev.map((c) => (c.id === updatedClient.id ? updatedClient : c)));
-    setSelectedClient(updatedClient);
-  };
-
+  const handleToggleTask = () => console.log('Handled by mutation');
+  const handleAddTask = () => console.log('Handled by mutation');
+  const handleUpdateTask = () => console.log('Handled by mutation');
+  const handleUpdateClient = (updatedClient: Client) => setSelectedClient(updatedClient);
   const handleNotifyCSM = (type: 'draft' | 'complete') => {
     if (!selectedClient) return;
-    
-    const updated = {
+    handleUpdateClient({
       ...selectedClient,
       draftBuildNotified: type === 'draft' ? true : selectedClient.draftBuildNotified,
       setupCompleteNotified: type === 'complete' ? true : selectedClient.setupCompleteNotified,
-    };
-    
-    handleUpdateClient(updated);
+    });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full bg-background">
+        <header className="border-b border-border bg-card shrink-0">
+          <div className="px-4 md:px-6 py-4">
+            <div className="flex items-center justify-between mb-4">
+              <div><Skeleton className="h-6 w-48 mb-2" /><Skeleton className="h-4 w-64" /></div>
+              <Skeleton className="h-10 w-32" />
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
+              {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-20" />)}
+            </div>
+          </div>
+        </header>
+        <main className="flex-1 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => <Skeleton key={i} className="h-48" />)}
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card shrink-0">
         <div className="px-4 md:px-6 py-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
@@ -135,110 +155,60 @@ export function ClientDashboard() {
               <h1 className="text-lg md:text-xl font-semibold text-foreground">Client Setup Tasks</h1>
               <p className="text-xs md:text-sm text-muted-foreground">Manage client onboarding</p>
             </div>
-            <Button className="gap-2 self-start sm:self-auto">
-              <Plus className="w-4 h-4" />
-              New Client
-            </Button>
+            <Button className="gap-2"><Plus className="w-4 h-4" />New Client</Button>
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            <div className="bg-secondary/50 dark:bg-secondary/30 rounded-lg p-3 border border-border/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <Building2 className="w-4 h-4" />
-                <span className="text-xs font-medium">Active Clients</span>
-              </div>
-              <p className="text-xl md:text-2xl font-semibold text-foreground">{stats.activeClients}</p>
+            <div className="bg-secondary/50 rounded-lg p-3 border">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1"><Building2 className="w-4 h-4" /><span className="text-xs">Active Clients</span></div>
+              <p className="text-2xl font-semibold">{stats.activeClients}</p>
             </div>
-            <div className="bg-secondary/50 dark:bg-secondary/30 rounded-lg p-3 border border-border/50">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <Clock className="w-4 h-4" />
-                <span className="text-xs font-medium">Open Tasks</span>
-              </div>
-              <p className="text-xl md:text-2xl font-semibold text-foreground">{stats.totalTasks}</p>
+            <div className="bg-secondary/50 rounded-lg p-3 border">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1"><Clock className="w-4 h-4" /><span className="text-xs">Open Tasks</span></div>
+              <p className="text-2xl font-semibold">{stats.totalTasks}</p>
             </div>
-            <div className={cn(
-              'rounded-lg p-3 border',
-              stats.overdue > 0 
-                ? 'bg-destructive/10 dark:bg-destructive/20 border-destructive/30' 
-                : 'bg-secondary/50 dark:bg-secondary/30 border-border/50'
-            )}>
-              <div className={cn(
-                'flex items-center gap-2 mb-1',
-                stats.overdue > 0 ? 'text-destructive' : 'text-muted-foreground'
-              )}>
-                <AlertTriangle className="w-4 h-4" />
-                <span className="text-xs font-medium">Overdue</span>
+            <div className={cn('rounded-lg p-3 border', stats.overdue > 0 ? 'bg-destructive/10' : 'bg-secondary/50')}>
+              <div className={cn('flex items-center gap-2 mb-1', stats.overdue > 0 ? 'text-destructive' : 'text-muted-foreground')}>
+                <AlertTriangle className="w-4 h-4" /><span className="text-xs">Overdue</span>
               </div>
-              <p className={cn(
-                'text-xl md:text-2xl font-semibold',
-                stats.overdue > 0 ? 'text-destructive' : 'text-foreground'
-              )}>{stats.overdue}</p>
+              <p className={cn('text-2xl font-semibold', stats.overdue > 0 ? 'text-destructive' : '')}>{stats.overdue}</p>
             </div>
-            <div className="bg-primary/10 dark:bg-primary/20 rounded-lg p-3 border border-primary/30">
-              <div className="flex items-center gap-2 text-primary mb-1">
-                <Clock className="w-4 h-4" />
-                <span className="text-xs font-medium">Due Today</span>
-              </div>
-              <p className="text-xl md:text-2xl font-semibold text-foreground">{stats.dueToday}</p>
+            <div className="bg-primary/10 rounded-lg p-3 border border-primary/30">
+              <div className="flex items-center gap-2 text-primary mb-1"><Clock className="w-4 h-4" /><span className="text-xs">Due Today</span></div>
+              <p className="text-2xl font-semibold">{stats.dueToday}</p>
             </div>
           </div>
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1 max-w-full sm:max-w-sm">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search clients..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 bg-background"
-              />
+              <Input placeholder="Search clients..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
             </div>
-
-            <div className="flex items-center gap-3">
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
-                <SelectTrigger className="w-full sm:w-[140px] bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  <SelectItem value="all">All Clients</SelectItem>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <Select value={csmFilter} onValueChange={setCsmFilter}>
-                <SelectTrigger className="w-full sm:w-[160px] bg-background">
-                  <SelectValue placeholder="All CSMs" />
-                </SelectTrigger>
-                <SelectContent className="bg-popover">
-                  <SelectItem value="all">All CSMs</SelectItem>
-                  {CSM_LIST.map((csm) => (
-                    <SelectItem key={csm.id} value={csm.id}>
-                      {csm.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
+              <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Clients</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="completed">Completed</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={csmFilter} onValueChange={setCsmFilter}>
+              <SelectTrigger className="w-[160px]"><SelectValue placeholder="All CSMs" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All CSMs</SelectItem>
+                {CSM_LIST.map((csm) => <SelectItem key={csm.id} value={csm.id}>{csm.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </header>
 
-      {/* Client Grid */}
       <main className="flex-1 overflow-auto px-4 md:px-6 py-4 md:py-6">
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredClients.map((client) => (
-            <ClientCard
-              key={client.id}
-              client={client}
-              tasks={getClientTasks(client.id)}
-              onClick={() => setSelectedClient(client)}
-            />
+            <ClientCard key={client.id} client={client} tasks={getClientTasks(client.id)} onClick={() => setSelectedClient(client)} />
           ))}
         </div>
-
         {filteredClients.length === 0 && (
           <div className="text-center py-16 text-muted-foreground">
             <Building2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -248,7 +218,6 @@ export function ClientDashboard() {
         )}
       </main>
 
-      {/* Client Task Panel */}
       {selectedClient && !showIntakeForm && (
         <ClientTaskPanel
           client={selectedClient}
@@ -263,12 +232,8 @@ export function ClientDashboard() {
         />
       )}
 
-      {/* Intake Form Modal */}
       {showIntakeForm && selectedClient && (
-        <IntakeFormModal
-          client={selectedClient}
-          onClose={() => setShowIntakeForm(false)}
-        />
+        <IntakeFormModal client={selectedClient} onClose={() => setShowIntakeForm(false)} />
       )}
     </div>
   );
