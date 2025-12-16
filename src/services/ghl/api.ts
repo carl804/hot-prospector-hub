@@ -1,5 +1,7 @@
-// GHL API Service - calls your Vercel API routes
-import { API_BASE_URL, GHL_ENDPOINTS } from './config';
+// Consolidated GHL API Service - Single endpoint for all GHL operations
+// This keeps us within Vercel's free tier API route limits
+
+import { API_BASE_URL } from './config';
 import type {
   GHLContact,
   GHLContactCreate,
@@ -20,19 +22,31 @@ import type {
   GHLPaginatedResponse,
 } from '@/types/ghl';
 
-// Generic fetch wrapper
-async function apiRequest<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
+type GHLAction = 
+  | 'contacts.list' | 'contacts.get' | 'contacts.create' | 'contacts.update' | 'contacts.delete'
+  | 'opportunities.list' | 'opportunities.get' | 'opportunities.create' | 'opportunities.update' | 'opportunities.delete' | 'opportunities.updateStatus'
+  | 'pipelines.list' | 'pipelines.get'
+  | 'tasks.list' | 'tasks.get' | 'tasks.create' | 'tasks.update' | 'tasks.delete' | 'tasks.complete'
+  | 'tags.list' | 'tags.get' | 'tags.create' | 'tags.update' | 'tags.delete'
+  | 'customFields.list' | 'customFields.get' | 'customFields.create' | 'customFields.update' | 'customFields.delete'
+  | 'customValues.list' | 'customValues.get' | 'customValues.create' | 'customValues.update' | 'customValues.delete'
+  | 'health';
+
+interface GHLRequestPayload {
+  action: GHLAction;
+  params?: Record<string, string | number | boolean>;
+  data?: unknown;
+  id?: string;
+  contactId?: string;
+  taskId?: string;
+}
+
+// Single API endpoint for all GHL operations
+async function ghlRequest<T>(payload: GHLRequestPayload): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}/ghl`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -43,198 +57,130 @@ async function apiRequest<T>(
   return response.json();
 }
 
+// Health check
+export const healthApi = {
+  check: () => ghlRequest<{ status: string; connected: boolean; timestamp: string }>({ action: 'health' }),
+};
+
 // ============ CONTACTS ============
 export const contactsApi = {
-  list: (params?: { limit?: number; skip?: number; query?: string }) => {
-    const searchParams = new URLSearchParams();
-    if (params?.limit) searchParams.set('limit', params.limit.toString());
-    if (params?.skip) searchParams.set('skip', params.skip.toString());
-    if (params?.query) searchParams.set('query', params.query);
-    const query = searchParams.toString();
-    return apiRequest<GHLPaginatedResponse<GHLContact>>(
-      `${GHL_ENDPOINTS.contacts.list}${query ? `?${query}` : ''}`
-    );
-  },
+  list: (params?: { limit?: number; skip?: number; query?: string }) =>
+    ghlRequest<GHLPaginatedResponse<GHLContact>>({ action: 'contacts.list', params }),
 
-  get: (id: string) => 
-    apiRequest<GHLContact>(GHL_ENDPOINTS.contacts.get(id)),
+  get: (id: string) =>
+    ghlRequest<GHLContact>({ action: 'contacts.get', id }),
 
   create: (data: GHLContactCreate) =>
-    apiRequest<GHLContact>(GHL_ENDPOINTS.contacts.create, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLContact>({ action: 'contacts.create', data }),
 
   update: (data: GHLContactUpdate) =>
-    apiRequest<GHLContact>(GHL_ENDPOINTS.contacts.update(data.id), {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLContact>({ action: 'contacts.update', id: data.id, data }),
 
   delete: (id: string) =>
-    apiRequest<void>(GHL_ENDPOINTS.contacts.delete(id), {
-      method: 'DELETE',
-    }),
+    ghlRequest<void>({ action: 'contacts.delete', id }),
 };
 
 // ============ OPPORTUNITIES ============
 export const opportunitiesApi = {
-  list: (params?: { pipelineId?: string; stageId?: string; status?: string; limit?: number }) => {
-    const searchParams = new URLSearchParams();
-    if (params?.pipelineId) searchParams.set('pipelineId', params.pipelineId);
-    if (params?.stageId) searchParams.set('stageId', params.stageId);
-    if (params?.status) searchParams.set('status', params.status);
-    if (params?.limit) searchParams.set('limit', params.limit.toString());
-    const query = searchParams.toString();
-    return apiRequest<GHLPaginatedResponse<GHLOpportunity>>(
-      `${GHL_ENDPOINTS.opportunities.list}${query ? `?${query}` : ''}`
-    );
-  },
+  list: (params?: { pipelineId?: string; stageId?: string; status?: string; limit?: number }) =>
+    ghlRequest<GHLPaginatedResponse<GHLOpportunity>>({ action: 'opportunities.list', params }),
 
   get: (id: string) =>
-    apiRequest<GHLOpportunity>(GHL_ENDPOINTS.opportunities.get(id)),
+    ghlRequest<GHLOpportunity>({ action: 'opportunities.get', id }),
 
   create: (data: GHLOpportunityCreate) =>
-    apiRequest<GHLOpportunity>(GHL_ENDPOINTS.opportunities.create, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLOpportunity>({ action: 'opportunities.create', data }),
 
   update: (data: GHLOpportunityUpdate) =>
-    apiRequest<GHLOpportunity>(GHL_ENDPOINTS.opportunities.update(data.id), {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLOpportunity>({ action: 'opportunities.update', id: data.id, data }),
 
   delete: (id: string) =>
-    apiRequest<void>(GHL_ENDPOINTS.opportunities.delete(id), {
-      method: 'DELETE',
-    }),
+    ghlRequest<void>({ action: 'opportunities.delete', id }),
 
   updateStatus: (id: string, status: GHLOpportunity['status']) =>
-    apiRequest<GHLOpportunity>(GHL_ENDPOINTS.opportunities.updateStatus(id), {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
-    }),
+    ghlRequest<GHLOpportunity>({ action: 'opportunities.updateStatus', id, data: { status } }),
 };
 
 // ============ PIPELINES ============
 export const pipelinesApi = {
   list: () =>
-    apiRequest<GHLPipeline[]>(GHL_ENDPOINTS.pipelines.list),
+    ghlRequest<GHLPipeline[]>({ action: 'pipelines.list' }),
 
   get: (id: string) =>
-    apiRequest<GHLPipeline>(GHL_ENDPOINTS.pipelines.get(id)),
+    ghlRequest<GHLPipeline>({ action: 'pipelines.get', id }),
 };
 
 // ============ TASKS ============
 export const tasksApi = {
   listByContact: (contactId: string) =>
-    apiRequest<GHLTask[]>(GHL_ENDPOINTS.contacts.tasks(contactId)),
+    ghlRequest<GHLTask[]>({ action: 'tasks.list', contactId }),
 
   get: (contactId: string, taskId: string) =>
-    apiRequest<GHLTask>(GHL_ENDPOINTS.tasks.get(contactId, taskId)),
+    ghlRequest<GHLTask>({ action: 'tasks.get', contactId, taskId }),
 
   create: (contactId: string, data: Omit<GHLTaskCreate, 'contactId'>) =>
-    apiRequest<GHLTask>(GHL_ENDPOINTS.tasks.create(contactId), {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLTask>({ action: 'tasks.create', contactId, data }),
 
   update: (contactId: string, taskId: string, data: Partial<GHLTaskUpdate>) =>
-    apiRequest<GHLTask>(GHL_ENDPOINTS.tasks.update(contactId, taskId), {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLTask>({ action: 'tasks.update', contactId, taskId, data }),
 
   delete: (contactId: string, taskId: string) =>
-    apiRequest<void>(GHL_ENDPOINTS.tasks.delete(contactId, taskId), {
-      method: 'DELETE',
-    }),
+    ghlRequest<void>({ action: 'tasks.delete', contactId, taskId }),
 
   complete: (contactId: string, taskId: string, completed: boolean) =>
-    apiRequest<GHLTask>(GHL_ENDPOINTS.tasks.complete(contactId, taskId), {
-      method: 'PUT',
-      body: JSON.stringify({ completed }),
-    }),
+    ghlRequest<GHLTask>({ action: 'tasks.complete', contactId, taskId, data: { completed } }),
 };
 
 // ============ TAGS ============
 export const tagsApi = {
   list: () =>
-    apiRequest<GHLTag[]>(GHL_ENDPOINTS.tags.list),
+    ghlRequest<GHLTag[]>({ action: 'tags.list' }),
 
   get: (id: string) =>
-    apiRequest<GHLTag>(GHL_ENDPOINTS.tags.get(id)),
+    ghlRequest<GHLTag>({ action: 'tags.get', id }),
 
   create: (data: GHLTagCreate) =>
-    apiRequest<GHLTag>(GHL_ENDPOINTS.tags.create, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLTag>({ action: 'tags.create', data }),
 
   update: (id: string, data: Partial<GHLTagCreate>) =>
-    apiRequest<GHLTag>(GHL_ENDPOINTS.tags.update(id), {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLTag>({ action: 'tags.update', id, data }),
 
   delete: (id: string) =>
-    apiRequest<void>(GHL_ENDPOINTS.tags.delete(id), {
-      method: 'DELETE',
-    }),
+    ghlRequest<void>({ action: 'tags.delete', id }),
 };
 
 // ============ CUSTOM FIELDS ============
 export const customFieldsApi = {
-  list: (model?: 'contact' | 'opportunity') => {
-    const query = model ? `?model=${model}` : '';
-    return apiRequest<GHLCustomField[]>(`${GHL_ENDPOINTS.customFields.list}${query}`);
-  },
+  list: (model?: 'contact' | 'opportunity') =>
+    ghlRequest<GHLCustomField[]>({ action: 'customFields.list', params: model ? { model } : undefined }),
 
   get: (id: string) =>
-    apiRequest<GHLCustomField>(GHL_ENDPOINTS.customFields.get(id)),
+    ghlRequest<GHLCustomField>({ action: 'customFields.get', id }),
 
   create: (data: GHLCustomFieldCreate) =>
-    apiRequest<GHLCustomField>(GHL_ENDPOINTS.customFields.create, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLCustomField>({ action: 'customFields.create', data }),
 
   update: (id: string, data: Partial<GHLCustomFieldCreate>) =>
-    apiRequest<GHLCustomField>(GHL_ENDPOINTS.customFields.update(id), {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLCustomField>({ action: 'customFields.update', id, data }),
 
   delete: (id: string) =>
-    apiRequest<void>(GHL_ENDPOINTS.customFields.delete(id), {
-      method: 'DELETE',
-    }),
+    ghlRequest<void>({ action: 'customFields.delete', id }),
 };
 
 // ============ CUSTOM VALUES ============
 export const customValuesApi = {
   list: () =>
-    apiRequest<GHLCustomValue[]>(GHL_ENDPOINTS.customValues.list),
+    ghlRequest<GHLCustomValue[]>({ action: 'customValues.list' }),
 
   get: (id: string) =>
-    apiRequest<GHLCustomValue>(GHL_ENDPOINTS.customValues.get(id)),
+    ghlRequest<GHLCustomValue>({ action: 'customValues.get', id }),
 
   create: (data: GHLCustomValueCreate) =>
-    apiRequest<GHLCustomValue>(GHL_ENDPOINTS.customValues.create, {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLCustomValue>({ action: 'customValues.create', data }),
 
   update: (id: string, data: Partial<GHLCustomValueCreate>) =>
-    apiRequest<GHLCustomValue>(GHL_ENDPOINTS.customValues.update(id), {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+    ghlRequest<GHLCustomValue>({ action: 'customValues.update', id, data }),
 
   delete: (id: string) =>
-    apiRequest<void>(GHL_ENDPOINTS.customValues.delete(id), {
-      method: 'DELETE',
-    }),
+    ghlRequest<void>({ action: 'customValues.delete', id }),
 };
