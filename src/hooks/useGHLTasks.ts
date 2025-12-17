@@ -1,10 +1,68 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useGHLContacts } from '@/hooks/useGHLContacts';
+import { useGHLOpportunities } from '@/hooks/useGHLOpportunities';
 import { tasksApi } from '@/services/ghl/api';
 import { GHL_QUERY_KEYS } from '@/services/ghl/config';
 import type { GHLTaskCreate, GHLTaskUpdate } from '@/types/ghl';
 import { toast } from 'sonner';
 
+// ===== NEW: Fetch tasks for specific pipeline =====
+export function usePipelineTasks(pipelineId: string) {
+  const { data: opportunitiesData, isLoading: isLoadingOpps } = useGHLOpportunities({ limit: 100 });
+  
+  const tasksQuery = useQuery({
+    queryKey: [...GHL_QUERY_KEYS.tasks, 'pipeline', pipelineId],
+    queryFn: async () => {
+      const allOpps = ((opportunitiesData as any)?.opportunities || []);
+      const pipelineOpps = allOpps.filter((opp: any) => opp.pipelineId === pipelineId);
+      
+      console.log(`📋 Fetching tasks for ${pipelineOpps.length} clients in pipeline...`);
+      
+      const taskPromises = pipelineOpps.map(async (opp: any) => {
+        const contactId = opp.contactId || opp.contact?.id;
+        if (!contactId) {
+          console.warn(`⚠️ No contactId for opportunity: ${opp.name}`);
+          return [];
+        }
+        
+        try {
+          const ghlTasks = await tasksApi.listByContact(contactId);
+          console.log(`✅ ${opp.name}: ${ghlTasks.length} tasks`);
+          
+          return ghlTasks.map((ghlTask: any) => ({
+            id: ghlTask.id,
+            title: ghlTask.title,
+            description: ghlTask.body || '',
+            clientId: opp.id,
+            clientName: opp.name,
+            contactId: contactId,
+            dueDate: ghlTask.dueDate,
+            priority: 'medium' as const,
+            status: ghlTask.completed ? 'completed' as const : 'todo' as const,
+            category: 'General',
+            completed: ghlTask.completed,
+            createdAt: ghlTask.dateAdded || new Date().toISOString(),
+            completedAt: ghlTask.completed ? new Date().toISOString() : undefined,
+          }));
+        } catch (error) {
+          console.error(`❌ Failed to fetch tasks for ${opp.name}:`, error);
+          return [];
+        }
+      });
+      
+      const allTaskArrays = await Promise.all(taskPromises);
+      const allTasks = allTaskArrays.flat();
+      
+      console.log(`🎉 TOTAL TASKS FETCHED: ${allTasks.length}`);
+      return allTasks;
+    },
+    enabled: !!opportunitiesData && !isLoadingOpps,
+    staleTime: 30000,
+  });
+  
+  return { ...tasksQuery, isLoading: isLoadingOpps || tasksQuery.isLoading };
+}
+
+// ===== Individual contact tasks =====
 export function useGHLContactTasks(contactId: string) {
   return useQuery({
     queryKey: GHL_QUERY_KEYS.contactTasks(contactId),
@@ -21,6 +79,7 @@ export function useGHLTask(contactId: string, taskId: string) {
   });
 }
 
+// ===== Mutations =====
 export function useCreateGHLTask() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -71,40 +130,4 @@ export function useCompleteGHLTask() {
     },
     onError: (error: Error) => toast.error(`Failed: ${error.message}`),
   });
-}
-
-export function useAllGHLTasks() {
-  const { data: contactsData, isLoading: isLoadingContacts } = useGHLContacts();
-  const contacts = ((contactsData as any)?.contacts || []);
-  const contactIds = contacts.map((c) => c.id);
-
-  const tasksQuery = useQuery({
-    queryKey: [...GHL_QUERY_KEYS.tasks, 'all-contacts', contactIds],
-    queryFn: async () => {
-      const taskPromises = contacts.map(async (contact) => {
-        const ghlTasks = await tasksApi.listByContact(contact.id);
-        return ghlTasks.map((ghlTask: any) => ({
-          id: ghlTask.id,
-          title: ghlTask.title,
-          description: ghlTask.body || '',
-          clientId: ghlTask.contactId,
-          clientName: contact.contactName || `${contact.firstName} ${contact.lastName}` || 'Unknown',
-          dueDate: ghlTask.dueDate,
-          priority: 'medium' as const,
-          status: ghlTask.completed ? 'completed' as const : 'todo' as const,
-          category: 'General',
-          createdAt: ghlTask.dateAdded || new Date().toISOString(),
-          completedAt: ghlTask.completed ? new Date().toISOString() : undefined,
-        }));
-      });
-      
-      const allTaskArrays = await Promise.all(taskPromises);
-      return allTaskArrays.flat();
-    },
-    enabled: contactIds.length > 0,
-    refetchInterval: 30000,
-    staleTime: 25000,
-  });
-  
-  return { ...tasksQuery, isLoading: isLoadingContacts || tasksQuery.isLoading };
 }
