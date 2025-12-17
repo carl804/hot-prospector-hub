@@ -35,7 +35,7 @@ export function usePipelineTasks(pipelineId: string) {
             clientName: opp.name,
             contactId: contactId,
             dueDate: ghlTask.dueDate,
-            priority: 'medium' as const,
+            priority: 'medium' as const, // Will be overridden by cache
             status: ghlTask.completed ? 'completed' as const : 'todo' as const,
             category: 'General',
             completed: ghlTask.completed,
@@ -55,8 +55,8 @@ export function usePipelineTasks(pipelineId: string) {
       return allTasks;
     },
     enabled: !!opportunitiesData && !isLoadingOpps,
-    staleTime: 5 * 60 * 1000,   // ⭐ 5 minutes - tasks update more frequently
-    gcTime: 15 * 60 * 1000,     // ⭐ 15 minutes
+    staleTime: 5 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
   
   return { ...tasksQuery, isLoading: isLoadingOpps || tasksQuery.isLoading };
@@ -67,8 +67,8 @@ export function useGHLContactTasks(contactId: string) {
     queryKey: GHL_QUERY_KEYS.contactTasks(contactId),
     queryFn: () => tasksApi.listByContact(contactId),
     enabled: !!contactId,
-    staleTime: 3 * 60 * 1000,   // ⭐ 3 minutes
-    gcTime: 10 * 60 * 1000,     // ⭐ 10 minutes
+    staleTime: 3 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -77,8 +77,8 @@ export function useGHLTask(contactId: string, taskId: string) {
     queryKey: [...GHL_QUERY_KEYS.contactTasks(contactId), taskId],
     queryFn: () => tasksApi.get(contactId, taskId),
     enabled: !!contactId && !!taskId,
-    staleTime: 2 * 60 * 1000,   // ⭐ 2 minutes
-    gcTime: 10 * 60 * 1000,     // ⭐ 10 minutes
+    staleTime: 2 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 
@@ -128,7 +128,6 @@ export function useCompleteGHLTask() {
       tasksApi.complete(contactId, taskId, completed),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: GHL_QUERY_KEYS.tasks });
-      toast.success('Task updated');
     },
     onError: (error: Error) => toast.error(`Failed: ${error.message}`),
   });

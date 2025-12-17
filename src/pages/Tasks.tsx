@@ -39,27 +39,36 @@ import { cn } from '@/lib/utils';
 import { isToday, isPast, startOfDay, isWithinInterval, format, endOfDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
-import { usePipelineTasks, useCompleteGHLTask, useUpdateGHLTask } from '@/hooks/useGHLTasks';
+import { usePipelineTasks, useCompleteGHLTask } from '@/hooks/useGHLTasks';
+import { useTaskMetadataCache } from '@/hooks/useTaskMetadataCache';
 
 type ViewMode = 'kanban' | 'list';
 
-const TARGET_PIPELINE_ID = "QNloaHE61P6yedF6jEzk"; // 002. Account Setup
+const TARGET_PIPELINE_ID = "QNloaHE61P6yedF6jEzk";
 
 export default function Tasks() {
-  // ⭐ FETCH REAL TASKS FROM GHL
-  const { data: tasksData = [], isLoading, refetch } = usePipelineTasks(TARGET_PIPELINE_ID);
+  const { data: tasksData = [], isLoading } = usePipelineTasks(TARGET_PIPELINE_ID);
   const [tasks, setTasks] = useState<Task[]>([]);
-
-  // ⭐ GHL MUTATION HOOKS
+  
   const completeTaskMutation = useCompleteGHLTask();
-  const updateTaskMutation = useUpdateGHLTask();
+  const { updatePriority, getPriority, loadFromGHL, triggerSync } = useTaskMetadataCache();
 
-  // Update tasks when data loads
+  // Merge priorities from cache when data loads
   useEffect(() => {
     if (tasksData.length > 0) {
-      setTasks(tasksData);
+      const tasksWithPriority = tasksData.map(task => ({
+        ...task,
+        priority: getPriority(task.id)
+      }));
+      setTasks(tasksWithPriority);
+      
+      // Load from GHL for each unique contact
+      const uniqueContacts = new Set(tasksData.map(t => t.contactId).filter(Boolean));
+      uniqueContacts.forEach(contactId => {
+        if (contactId) loadFromGHL(contactId);
+      });
     }
-  }, [tasksData]);
+  }, [tasksData, getPriority, loadFromGHL]);
 
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,7 +81,6 @@ export default function Tasks() {
   const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
   const [preselectedClientId, setPreselectedClientId] = useState<string | undefined>();
 
-  // Get unique clients from tasks
   const clients = useMemo(() => {
     const clientMap = new Map<string, { id: string; name: string }>();
     tasks.forEach((task) => {
@@ -83,7 +91,6 @@ export default function Tasks() {
     return Array.from(clientMap.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [tasks]);
 
-  // Filter tasks
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
       const matchesSearch =
@@ -110,7 +117,6 @@ export default function Tasks() {
     });
   }, [tasks, searchQuery, categoryFilter, clientFilter, priorityFilter, dateRange]);
 
-  // Stats
   const stats = useMemo(() => {
     const activeTasks = tasks.filter((t) => t.status !== 'completed');
     const overdueTasks = activeTasks.filter((t) => {
@@ -129,7 +135,6 @@ export default function Tasks() {
     };
   }, [tasks]);
 
-  // ⭐ SYNC TO GHL: Toggle task completion
   const handleToggleTask = (taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task || !task.contactId) {
@@ -140,7 +145,6 @@ export default function Tasks() {
     const newStatus = task.status === 'completed' ? 'todo' : 'completed';
     const isCompleted = newStatus === 'completed';
 
-    // Optimistic update
     setTasks((prev) =>
       prev.map((t) =>
         t.id === taskId
@@ -154,7 +158,6 @@ export default function Tasks() {
       )
     );
 
-    // Sync to GHL
     completeTaskMutation.mutate(
       {
         contactId: task.contactId,
@@ -162,8 +165,14 @@ export default function Tasks() {
         completed: isCompleted,
       },
       {
+        onSuccess: () => {
+          // Sync metadata on completion
+          const contactTasks = tasks
+            .filter(t => t.contactId === task.contactId)
+            .map(t => t.id);
+          triggerSync(task.contactId!, contactTasks);
+        },
         onError: () => {
-          // Revert on error
           setTasks((prev) =>
             prev.map((t) =>
               t.id === taskId ? task : t
@@ -175,7 +184,6 @@ export default function Tasks() {
     );
   };
 
-  // ⭐ SYNC TO GHL: Update task status
   const handleUpdateTaskStatus = (taskId: string, newStatus: TaskStatus) => {
     const task = tasks.find(t => t.id === taskId);
     if (!task || !task.contactId) {
@@ -186,7 +194,6 @@ export default function Tasks() {
     const isCompleted = newStatus === 'completed';
     const previousTask = { ...task };
 
-    // Optimistic update
     setTasks((prev) =>
       prev.map((t) =>
         t.id === taskId
@@ -200,7 +207,6 @@ export default function Tasks() {
       )
     );
 
-    // Sync to GHL
     completeTaskMutation.mutate(
       {
         contactId: task.contactId,
@@ -208,8 +214,13 @@ export default function Tasks() {
         completed: isCompleted,
       },
       {
+        onSuccess: () => {
+          const contactTasks = tasks
+            .filter(t => t.contactId === task.contactId)
+            .map(t => t.id);
+          triggerSync(task.contactId!, contactTasks);
+        },
         onError: () => {
-          // Revert on error
           setTasks((prev) =>
             prev.map((t) =>
               t.id === taskId ? previousTask : t
@@ -301,14 +312,26 @@ export default function Tasks() {
     setSelectedTaskIds(new Set());
   };
 
-  // ⭐ PRIORITY UPDATE (Local only - GHL doesn't support priority field)
   const handleUpdatePriority = (taskId: string, priority: Priority) => {
+    const task = tasks.find(t => t.id === taskId);
+    
+    // Update local state
     setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId ? { ...task, priority } : task
+      prev.map((t) =>
+        t.id === taskId ? { ...t, priority } : t
       )
     );
-    // Note: Priority is stored locally only since GHL doesn't have a priority field
+    
+    // Update cache (instant, localStorage)
+    updatePriority(taskId, priority);
+    
+    // Trigger debounced sync to GHL
+    if (task?.contactId) {
+      const contactTasks = tasks
+        .filter(t => t.contactId === task.contactId)
+        .map(t => t.id);
+      triggerSync(task.contactId, contactTasks);
+    }
   };
 
   const handleAddTaskForClient = (clientId: string) => {
