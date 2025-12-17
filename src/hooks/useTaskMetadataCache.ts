@@ -90,7 +90,7 @@ export function useTaskMetadataCache() {
         return;
       }
 
-      // Update using GHL's customFields array format
+      // Update using GHL's customFields array format (single argument with id inside)
       await contactsApi.update({
         id: contactId,
         customFields: [

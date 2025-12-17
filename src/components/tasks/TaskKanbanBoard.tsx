@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { Task, TaskStatus, Priority } from '@/types/task';
 import { TaskCard } from '@/components/tasks/TaskCard';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -100,7 +100,7 @@ export function TaskKanbanBoard({
         newSet.delete(columnId);
       } else {
         newSet.add(columnId);
-        setShowAllCompleted(false); // Reset show all when collapsing
+        setShowAllCompleted(false);
       }
       return newSet;
     });
@@ -153,12 +153,12 @@ export function TaskKanbanBoard({
                         {isCollapsed ? (
                           <ChevronRight className="w-5 h-5 text-gray-700 dark:text-gray-300" />
                         ) : (
-                          <ChevronDown className="w-5 h-5 text-gray-700 dark:text-gray-300" />
-                        )}
-                        {!isCollapsed && (
-                          <h3 className="font-bold text-lg text-gray-900 dark:text-gray-50">
-                            {column.title}
-                          </h3>
+                          <>
+                            <ChevronDown className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+                            <h3 className="font-bold text-lg text-gray-900 dark:text-gray-50">
+                              {column.title}
+                            </h3>
+                          </>
                         )}
                       </button>
                     ) : (
@@ -167,23 +167,26 @@ export function TaskKanbanBoard({
                       </h3>
                     )}
                     
-                    <span 
-                      className={cn(
-                        'text-sm font-bold px-3 py-1.5 rounded-full',
-                        column.iconBg,
-                        'text-gray-700 dark:text-gray-300'
-                      )}
-                    >
-                      {columnTasks.length}
-                    </span>
+                    {!isCollapsed && (
+                      <span 
+                        className={cn(
+                          'text-sm font-bold px-3 py-1.5 rounded-full',
+                          column.iconBg,
+                          'text-gray-700 dark:text-gray-300'
+                        )}
+                      >
+                        {columnTasks.length}
+                      </span>
+                    )}
                   </div>
 
-                  {/* Collapsed Preview */}
+                  {/* Collapsed: Show icon + count centered */}
                   {isCollapsed && (
-                    <div className="mt-3 text-center">
-                      <div className="text-xs text-gray-600 dark:text-gray-400 font-medium rotate-90 whitespace-nowrap origin-center transform translate-y-4">
-                        {column.title}
-                      </div>
+                    <div className="flex flex-col items-center justify-center py-8 gap-2">
+                      <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                      <span className="text-lg font-bold text-gray-700 dark:text-gray-300">
+                        {columnTasks.length}
+                      </span>
                     </div>
                   )}
                 </div>
