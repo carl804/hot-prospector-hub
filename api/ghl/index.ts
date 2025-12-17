@@ -67,6 +67,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'contacts.list': {
         const searchParams = new URLSearchParams({ location_id: GHL_LOCATION_ID });
         if (params?.limit) searchParams.set('limit', String(params.limit));
+        if (params?.startAfter) searchParams.set('startAfter', String(params.startAfter));
+        if (params?.startAfterId) searchParams.set('startAfterId', String(params.startAfterId));
         if (params?.skip) searchParams.set('skip', String(params.skip));
         if (params?.query) searchParams.set('query', String(params.query));
         endpoint = `/contacts/?${searchParams}`;
@@ -97,6 +99,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         if (params?.stageId) searchParams.set('stageId', String(params.stageId));
         if (params?.status) searchParams.set('status', String(params.status));
         if (params?.limit) searchParams.set('limit', String(params.limit));
+        if (params?.startAfter) searchParams.set('startAfter', String(params.startAfter));
+        if (params?.startAfterId) searchParams.set('startAfterId', String(params.startAfterId));
         endpoint = `/opportunities/search?${searchParams}`;
         break;
       }
