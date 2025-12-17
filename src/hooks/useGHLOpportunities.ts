@@ -13,7 +13,7 @@ export function useGHLOpportunities(params?: {
   return useQuery({
     queryKey: [...GHL_QUERY_KEYS.opportunities, params],
     queryFn: async () => {
-      console.log("🔄 FETCHING OPPORTUNITIES WITH PAGINATION...");
+      console.log('🔄 FETCHING OPPORTUNITIES WITH PAGINATION...');
       let allOpportunities: any[] = [];
       let page = 0;
       const maxPages = 10;
@@ -29,7 +29,7 @@ export function useGHLOpportunities(params?: {
         
         // Stop if less than 100 (last page)
         if (!result.opportunities || result.opportunities.length < 100) {
-          console.log("🏁 Reached last page!");
+          console.log('🏁 Reached last page!');
           break;
         }
         
@@ -40,11 +40,6 @@ export function useGHLOpportunities(params?: {
       return { opportunities: allOpportunities, meta: { total: allOpportunities.length } };
     },
     staleTime: 30000,
-  });
-}
-  return useQuery({
-    queryKey: [...GHL_QUERY_KEYS.opportunities, params],
-    queryFn: () => opportunitiesApi.list(params),
   });
 }
 
@@ -73,7 +68,6 @@ export function useGHLPipeline(id: string) {
 
 export function useCreateGHLOpportunity() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (data: GHLOpportunityCreate) => opportunitiesApi.create(data),
     onSuccess: () => {
@@ -88,7 +82,6 @@ export function useCreateGHLOpportunity() {
 
 export function useUpdateGHLOpportunity() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (data: GHLOpportunityUpdate) => opportunitiesApi.update(data),
     onSuccess: (data) => {
@@ -104,7 +97,6 @@ export function useUpdateGHLOpportunity() {
 
 export function useDeleteGHLOpportunity() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: (id: string) => opportunitiesApi.delete(id),
     onSuccess: () => {
@@ -119,7 +111,6 @@ export function useDeleteGHLOpportunity() {
 
 export function useUpdateGHLOpportunityStatus() {
   const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: GHLOpportunity['status'] }) =>
       opportunitiesApi.updateStatus(id, status),
