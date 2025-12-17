@@ -255,6 +255,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(response.status).json(responseData);
     }
 
+    // ⭐ FIX: Extract tasks array from GHL response
+    // GHL returns {tasks: [...], traceId: "..."} but we expect just the array
+    if (action === 'tasks.list' && responseData.tasks) {
+      return res.status(200).json(responseData.tasks);
+    }
+
     return res.status(200).json(responseData);
   } catch (error) {
     console.error('GHL API Error:', error);
