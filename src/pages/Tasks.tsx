@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   LayoutGrid,
@@ -12,13 +12,12 @@ import {
   X,
   Flag,
   Trash2,
-  CheckSquare,
 } from 'lucide-react';
-import { Task, TaskStatus, TASK_CATEGORIES, Priority } from '@/types/task';
-import { MOCK_TASKS } from '@/data/taskData';
+import { Task, TaskStatus, TASK_CATEGORIES } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -40,11 +39,24 @@ import { cn } from '@/lib/utils';
 import { isToday, isPast, startOfDay, isWithinInterval, format, endOfDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
+import { usePipelineTasks } from '@/hooks/useGHLTasks';
 
 type ViewMode = 'kanban' | 'list';
 
+const TARGET_PIPELINE_ID = "QNloaHE61P6yedF6jEzk"; // 002. Account Setup
+
 export default function Tasks() {
-  const [tasks, setTasks] = useState<Task[]>(MOCK_TASKS);
+  // ⭐ FETCH REAL TASKS FROM GHL
+  const { data: tasksData = [], isLoading } = usePipelineTasks(TARGET_PIPELINE_ID);
+  const [tasks, setTasks] = useState<Task[]>([]);
+
+  // Update tasks when data loads
+  useEffect(() => {
+    if (tasksData.length > 0) {
+      setTasks(tasksData);
+    }
+  }, [tasksData]);
+
   const [viewMode, setViewMode] = useState<ViewMode>('kanban');
   const [searchQuery, setSearchQuery] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -79,7 +91,7 @@ export default function Tasks() {
 
       // Date range filter
       let matchesDateRange = true;
-      if (dateRange?.from) {
+      if (dateRange?.from && task.dueDate) {
         const taskDate = new Date(task.dueDate);
         if (dateRange.to) {
           matchesDateRange = isWithinInterval(taskDate, {
@@ -99,10 +111,11 @@ export default function Tasks() {
   const stats = useMemo(() => {
     const activeTasks = tasks.filter((t) => t.status !== 'completed');
     const overdueTasks = activeTasks.filter((t) => {
+      if (!t.dueDate) return false;
       const dueDate = startOfDay(new Date(t.dueDate));
       return isPast(dueDate) && !isToday(dueDate);
     });
-    const dueTodayTasks = activeTasks.filter((t) => isToday(new Date(t.dueDate)));
+    const dueTodayTasks = activeTasks.filter((t) => t.dueDate && isToday(new Date(t.dueDate)));
     const completedTasks = tasks.filter((t) => t.status === 'completed');
 
     return {
@@ -168,7 +181,6 @@ export default function Tasks() {
     toast.success('Task added successfully');
   };
 
-  // Bulk selection handlers
   const handleToggleSelectTask = (taskId: string) => {
     setSelectedTaskIds((prev) => {
       const newSet = new Set(prev);
@@ -230,6 +242,24 @@ export default function Tasks() {
   const clearDateFilter = () => {
     setDateRange(undefined);
   };
+
+  // ⭐ LOADING STATE
+  if (isLoading) {
+    return (
+      <div className="flex flex-col h-full bg-background p-8">
+        <div className="mb-4">
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-4 w-96" />
+        </div>
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          {[...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-24 rounded-lg" />
+          ))}
+        </div>
+        <Skeleton className="h-96 rounded-lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-full bg-background">
