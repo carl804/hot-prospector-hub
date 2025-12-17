@@ -12,6 +12,38 @@ export function useGHLOpportunities(params?: {
 }) {
   return useQuery({
     queryKey: [...GHL_QUERY_KEYS.opportunities, params],
+    queryFn: async () => {
+      console.log("🔄 FETCHING OPPORTUNITIES WITH PAGINATION...");
+      let allOpportunities: any[] = [];
+      let page = 0;
+      const maxPages = 10;
+      
+      while (page < maxPages) {
+        console.log(`📄 Fetching page ${page + 1}...`);
+        const result: any = await opportunitiesApi.list({ ...params, limit: 100 });
+        
+        if (result.opportunities?.length) {
+          allOpportunities = [...allOpportunities, ...result.opportunities];
+          console.log(`✅ Page ${page + 1}: Got ${result.opportunities.length} opportunities (Total so far: ${allOpportunities.length})`);
+        }
+        
+        // Stop if less than 100 (last page)
+        if (!result.opportunities || result.opportunities.length < 100) {
+          console.log("🏁 Reached last page!");
+          break;
+        }
+        
+        page++;
+      }
+      
+      console.log(`🎉 TOTAL FETCHED: ${allOpportunities.length} opportunities`);
+      return { opportunities: allOpportunities, meta: { total: allOpportunities.length } };
+    },
+    staleTime: 30000,
+  });
+}
+  return useQuery({
+    queryKey: [...GHL_QUERY_KEYS.opportunities, params],
     queryFn: () => opportunitiesApi.list(params),
   });
 }
