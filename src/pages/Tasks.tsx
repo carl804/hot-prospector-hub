@@ -13,7 +13,7 @@ import {
   Flag,
   Trash2,
 } from 'lucide-react';
-import { Task, TaskStatus, TASK_CATEGORIES } from '@/types/task';
+import { Task, TaskStatus, TASK_CATEGORIES, Priority } from '@/types/task'; // ⭐ ADDED Priority
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -232,6 +232,15 @@ export default function Tasks() {
     setTasks((prev) => prev.filter((task) => !selectedTaskIds.has(task.id)));
     toast.success(`${selectedTaskIds.size} tasks deleted`);
     setSelectedTaskIds(new Set());
+  };
+
+  // ⭐ NEW: Handle priority update
+  const handleUpdatePriority = (taskId: string, priority: Priority) => {
+    setTasks((prev) =>
+      prev.map((task) =>
+        task.id === taskId ? { ...task, priority } : task
+      )
+    );
   };
 
   const handleAddTaskForClient = (clientId: string) => {
@@ -519,6 +528,7 @@ export default function Tasks() {
             onReorderTasks={handleReorderTasks}
             selectedTaskIds={selectedTaskIds}
             onToggleSelectTask={handleToggleSelectTask}
+            onUpdatePriority={handleUpdatePriority}
           />
         ) : (
           <TaskListView
