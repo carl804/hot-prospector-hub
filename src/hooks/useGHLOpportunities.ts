@@ -15,25 +15,56 @@ export function useGHLOpportunities(params?: {
     queryFn: async () => {
       console.log('🔄 FETCHING OPPORTUNITIES WITH PAGINATION...');
       let allOpportunities: any[] = [];
-      let page = 0;
-      const maxPages = 10;
+      let pageCount = 0;
+      let startAfter: string | number | null = null;
+      let startAfterId: string | null = null;
+      const seenIds = new Set<string>();
       
-      while (page < maxPages) {
-        console.log(`📄 Fetching page ${page + 1}...`);
-        const result: any = await opportunitiesApi.list({ ...params, limit: 100 });
+      while (pageCount < 10) {
+        pageCount++;
         
-        if (result.opportunities?.length) {
-          allOpportunities = [...allOpportunities, ...result.opportunities];
-          console.log(`✅ Page ${page + 1}: Got ${result.opportunities.length} opportunities (Total so far: ${allOpportunities.length})`);
+        const queryParams: any = { ...params, limit: 100 };
+        if (startAfter && startAfterId) {
+          queryParams.startAfter = startAfter;
+          queryParams.startAfterId = startAfterId;
         }
         
-        // Stop if less than 100 (last page)
-        if (!result.opportunities || result.opportunities.length < 100) {
-          console.log('🏁 Reached last page!');
+        console.log(`📄 Fetching page ${pageCount}${startAfter ? ` (cursor: ${startAfterId})` : ''}...`);
+        
+        const result: any = await opportunitiesApi.list(queryParams);
+        
+        if (!result.opportunities || result.opportunities.length === 0) {
+          console.log('🏁 No more opportunities');
           break;
         }
         
-        page++;
+        // Check for infinite loop
+        const firstId = result.opportunities[0]?.id;
+        if (firstId && seenIds.has(firstId)) {
+          console.warn('⚠️ Infinite loop detected, stopping');
+          break;
+        }
+        
+        result.opportunities.forEach((opp: any) => seenIds.add(opp.id));
+        allOpportunities = [...allOpportunities, ...result.opportunities];
+        
+        console.log(`✅ Page ${pageCount}: Got ${result.opportunities.length} (Total: ${allOpportunities.length})`);
+        
+        // If less than 100, we're done
+        if (result.opportunities.length < 100) {
+          console.log('🏁 Got less than 100, reached end');
+          break;
+        }
+        
+        // Get cursor for next page
+        if (result.meta?.startAfter && result.meta?.startAfterId) {
+          startAfter = result.meta.startAfter;
+          startAfterId = result.meta.startAfterId;
+          console.log(`🔄 Next cursor: ${startAfterId}`);
+        } else {
+          console.log('🏁 No cursor in response, stopping');
+          break;
+        }
       }
       
       console.log(`🎉 TOTAL FETCHED: ${allOpportunities.length} opportunities`);
