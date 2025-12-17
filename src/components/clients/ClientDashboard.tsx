@@ -12,6 +12,8 @@ type StatusFilter = 'all' | 'active' | 'completed';
 
 export function ClientDashboard() {
   const { data: opportunitiesData, isLoading } = useGHLOpportunities({ limit: 100 });
+  // REMOVED: useAllGHLTasks() - was causing 403 error
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [csmFilter, setCsmFilter] = useState('all');
