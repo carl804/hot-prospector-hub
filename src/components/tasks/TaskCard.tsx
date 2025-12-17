@@ -1,6 +1,6 @@
-import { Check, Clock, AlertCircle, Building2 } from 'lucide-react';
+import { Clock, AlertCircle, Building2 } from 'lucide-react';
 import { format, isToday, isTomorrow, isPast, differenceInDays } from 'date-fns';
-import { Task, TASK_CATEGORIES, Priority } from '@/types/task';
+import { Task, Priority } from '@/types/task';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 
@@ -8,10 +8,10 @@ interface TaskCardProps {
   task: Task;
   onToggleComplete: (taskId: string) => void;
   onClick: (task: Task) => void;
+  onUpdatePriority?: (taskId: string, priority: Priority) => void;
 }
 
-export function TaskCard({ task, onToggleComplete, onClick }: TaskCardProps) {
-  const category = TASK_CATEGORIES.find((c) => c.id === task.category);
+export function TaskCard({ task, onToggleComplete, onClick, onUpdatePriority }: TaskCardProps) {
   const isCompleted = task.status === 'completed';
   const dueDate = new Date(task.dueDate);
   const isOverdue = isPast(dueDate) && !isToday(dueDate) && !isCompleted;
@@ -19,12 +19,22 @@ export function TaskCard({ task, onToggleComplete, onClick }: TaskCardProps) {
   const getPriorityStyles = (priority: Priority) => {
     switch (priority) {
       case 'high':
-        return 'bg-badge-red-bg text-badge-red-text';
+        return 'bg-red-500 text-white hover:bg-red-600';
       case 'medium':
-        return 'bg-badge-yellow-bg text-badge-yellow-text';
+        return 'bg-orange-500 text-white hover:bg-orange-600';
       case 'low':
-        return 'bg-badge-gray-bg text-badge-gray-text';
+        return 'bg-green-500 text-white hover:bg-green-600';
     }
+  };
+
+  const cyclePriority = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!onUpdatePriority) return;
+    
+    const priorities: Priority[] = ['low', 'medium', 'high'];
+    const currentIndex = priorities.indexOf(task.priority);
+    const nextPriority = priorities[(currentIndex + 1) % priorities.length];
+    onUpdatePriority(task.id, nextPriority);
   };
 
   const getDueDateLabel = () => {
@@ -65,14 +75,17 @@ export function TaskCard({ task, onToggleComplete, onClick }: TaskCardProps) {
             {task.title}
           </h3>
 
-          <span
+          <button
+            onClick={cyclePriority}
             className={cn(
-              'shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full uppercase tracking-wide',
+              'shrink-0 text-[10px] font-medium px-2.5 py-1 rounded-full uppercase tracking-wide',
+              'transition-colors duration-200 cursor-pointer',
               getPriorityStyles(task.priority)
             )}
+            title="Click to change priority"
           >
             {task.priority}
-          </span>
+          </button>
         </div>
 
         {task.description && (
@@ -87,14 +100,6 @@ export function TaskCard({ task, onToggleComplete, onClick }: TaskCardProps) {
             <Building2 className="w-3 h-3" />
             <span className="truncate max-w-[140px]">{task.clientName}</span>
           </div>
-
-          {/* Category */}
-          {category && (
-            <div className="flex items-center gap-1.5">
-              <div className={cn('w-2 h-2 rounded-full', category.color)} />
-              <span className="text-xs text-muted-foreground">{category.name}</span>
-            </div>
-          )}
 
           {/* Due date */}
           <div

@@ -1,175 +1,140 @@
-import { useState } from 'react';
-import {
-  DndContext,
-  DragEndEvent,
-  DragOverEvent,
-  DragStartEvent,
-  DragOverlay,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  closestCorners,
-} from '@dnd-kit/core';
-import { arrayMove } from '@dnd-kit/sortable';
-import { Opportunity, Stage, STAGES } from '@/types/opportunity';
-import { CSM_LIST, MOCK_OPPORTUNITIES } from '@/data/mockData';
-import { TopBar } from './TopBar';
-import { KanbanColumn } from './KanbanColumn';
-import { OpportunityCard } from './OpportunityCard';
-import { DetailPanel } from './DetailPanel';
-import { IntakeFormModal } from './IntakeFormModal';
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
+import { Task, TaskStatus, Priority } from '@/types/task';
+import { TaskCard } from '@/components/tasks/TaskCard';
+import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
-export function KanbanBoard() {
-  const [opportunities, setOpportunities] = useState<Opportunity[]>(MOCK_OPPORTUNITIES);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCsm, setSelectedCsm] = useState('all');
-  const [selectedOpportunity, setSelectedOpportunity] = useState<Opportunity | null>(null);
-  const [showIntakeForm, setShowIntakeForm] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
+interface TaskKanbanBoardProps {
+  tasks: Task[];
+  onTaskClick: (task: Task) => void;
+  onUpdateTaskStatus: (taskId: string, status: TaskStatus) => void;
+  onReorderTasks: (taskIds: string[], status: TaskStatus) => void;
+  selectedTaskIds: Set<string>;
+  onToggleSelectTask: (taskId: string) => void;
+  onUpdatePriority?: (taskId: string, priority: Priority) => void;
+}
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    })
-  );
+const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
+  { id: 'todo', title: 'To Do', color: 'border-t-slate-500' },
+  { id: 'in_progress', title: 'In Progress', color: 'border-t-blue-500' },
+  { id: 'completed', title: 'Completed', color: 'border-t-green-500' },
+];
 
-  // Filter opportunities
-  const filteredOpportunities = opportunities.filter((opp) => {
-    const searchLower = searchQuery.toLowerCase();
-    const matchesSearch =
-      opp.agencyName.toLowerCase().includes(searchLower) ||
-      `${opp.contactFirstName} ${opp.contactLastName}`.toLowerCase().includes(searchLower);
-    const matchesCsm = selectedCsm === 'all' || opp.assignedCsmId === selectedCsm;
-    return matchesSearch && matchesCsm;
-  });
+export function TaskKanbanBoard({
+  tasks,
+  onTaskClick,
+  onUpdateTaskStatus,
+  onReorderTasks,
+  selectedTaskIds,
+  onToggleSelectTask,
+  onUpdatePriority,
+}: TaskKanbanBoardProps) {
+  const tasksByStatus = tasks.reduce((acc, task) => {
+    if (!acc[task.status]) {
+      acc[task.status] = [];
+    }
+    acc[task.status].push(task);
+    return acc;
+  }, {} as Record<TaskStatus, Task[]>);
 
-  const getOpportunitiesByStage = (stage: Stage) =>
-    filteredOpportunities.filter((opp) => opp.stage === stage);
+  const handleDragEnd = (result: DropResult) => {
+    const { source, destination, draggableId } = result;
 
-  const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as string);
-  };
+    if (!destination) return;
 
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeOpp = opportunities.find((o) => o.id === active.id);
-    if (!activeOpp) return;
-
-    // Check if dropping over a column
-    const overStage = STAGES.find((s) => s.id === over.id);
-    if (overStage && activeOpp.stage !== overStage.id) {
-      setOpportunities((prev) =>
-        prev.map((opp) =>
-          opp.id === active.id ? { ...opp, stage: overStage.id } : opp
-        )
-      );
+    // Same column reorder
+    if (source.droppableId === destination.droppableId) {
+      const columnTasks = tasksByStatus[source.droppableId as TaskStatus] || [];
+      const reorderedIds = Array.from(columnTasks.map((t) => t.id));
+      const [movedId] = reorderedIds.splice(source.index, 1);
+      reorderedIds.splice(destination.index, 0, movedId);
+      onReorderTasks(reorderedIds, source.droppableId as TaskStatus);
+    } else {
+      // Move to different column
+      onUpdateTaskStatus(draggableId, destination.droppableId as TaskStatus);
     }
   };
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    setActiveId(null);
-    const { active, over } = event;
-    if (!over) return;
-
-    const activeOpp = opportunities.find((o) => o.id === active.id);
-    if (!activeOpp) return;
-
-    // Check if dropping over a column
-    const overStage = STAGES.find((s) => s.id === over.id);
-    if (overStage) {
-      setOpportunities((prev) =>
-        prev.map((opp) =>
-          opp.id === active.id ? { ...opp, stage: overStage.id } : opp
-        )
-      );
-    }
+  const handleToggleComplete = (taskId: string) => {
+    const task = tasks.find((t) => t.id === taskId);
+    if (!task) return;
+    onUpdateTaskStatus(taskId, task.status === 'completed' ? 'todo' : 'completed');
   };
-
-  const handleCardClick = (opportunity: Opportunity) => {
-    setSelectedOpportunity(opportunity);
-  };
-
-  const handleUpdateOpportunity = (updated: Opportunity) => {
-    setOpportunities((prev) =>
-      prev.map((opp) => (opp.id === updated.id ? updated : opp))
-    );
-    setSelectedOpportunity(updated);
-  };
-
-  const handleAddOpportunity = () => {
-    // For now, just show a placeholder - would open a form in a real app
-    console.log('Add opportunity clicked');
-  };
-
-  const activeOpportunity = activeId
-    ? opportunities.find((o) => o.id === activeId)
-    : null;
 
   return (
-    <div className="h-screen flex flex-col bg-kanban-bg">
-      <TopBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        selectedCsm={selectedCsm}
-        onCsmChange={setSelectedCsm}
-        csmList={CSM_LIST}
-        onAddOpportunity={handleAddOpportunity}
-      />
+    <DragDropContext onDragEnd={handleDragEnd}>
+      <div className="flex gap-6 h-full overflow-x-auto p-6">
+        {COLUMNS.map((column) => {
+          const columnTasks = tasksByStatus[column.id] || [];
+          return (
+            <div key={column.id} className="flex-1 min-w-[320px] max-w-[400px]">
+              <div className={cn('rounded-lg border-t-4 bg-card/50 h-full flex flex-col', column.color)}>
+                <div className="p-4 border-b border-border">
+                  <div className="flex items-center justify-between mb-1">
+                    <h3 className="font-semibold text-foreground">{column.title}</h3>
+                    <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded">
+                      {columnTasks.length}
+                    </span>
+                  </div>
+                </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCorners}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
-        <div className="flex-1 overflow-x-auto kanban-scrollbar">
-          <div className="flex gap-4 p-6 min-w-max">
-            {STAGES.map((stage) => (
-              <KanbanColumn
-                key={stage.id}
-                stage={stage}
-                opportunities={getOpportunitiesByStage(stage.id)}
-                csmList={CSM_LIST}
-                onCardClick={handleCardClick}
-              />
-            ))}
-          </div>
-        </div>
-
-        <DragOverlay>
-          {activeOpportunity && (
-            <div className="rotate-3 scale-105">
-              <OpportunityCard
-                opportunity={activeOpportunity}
-                csm={CSM_LIST.find((c) => c.id === activeOpportunity.assignedCsmId)}
-                onClick={() => {}}
-              />
+                <Droppable droppableId={column.id}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={cn(
+                        'flex-1 p-4 space-y-3 overflow-y-auto',
+                        snapshot.isDraggingOver && 'bg-secondary/30'
+                      )}
+                    >
+                      {columnTasks.map((task, index) => (
+                        <Draggable key={task.id} draggableId={task.id} index={index}>
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              className={cn(
+                                'transition-shadow',
+                                snapshot.isDragging && 'shadow-lg rotate-2'
+                              )}
+                            >
+                              <div className="relative">
+                                {selectedTaskIds.size > 0 && (
+                                  <div className="absolute -left-2 top-4 z-10">
+                                    <Checkbox
+                                      checked={selectedTaskIds.has(task.id)}
+                                      onCheckedChange={() => onToggleSelectTask(task.id)}
+                                      onClick={(e) => e.stopPropagation()}
+                                    />
+                                  </div>
+                                )}
+                                <TaskCard
+                                  task={task}
+                                  onToggleComplete={handleToggleComplete}
+                                  onClick={onTaskClick}
+                                  onUpdatePriority={onUpdatePriority}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                      {columnTasks.length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground text-sm">
+                          No tasks
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
             </div>
-          )}
-        </DragOverlay>
-      </DndContext>
-
-      {selectedOpportunity && !showIntakeForm && (
-        <DetailPanel
-          opportunity={selectedOpportunity}
-          csmList={CSM_LIST}
-          onClose={() => setSelectedOpportunity(null)}
-          onUpdate={handleUpdateOpportunity}
-          onViewIntakeForm={() => setShowIntakeForm(true)}
-        />
-      )}
-
-      {showIntakeForm && selectedOpportunity && (
-        <IntakeFormModal
-          opportunity={selectedOpportunity}
-          onClose={() => setShowIntakeForm(false)}
-        />
-      )}
-    </div>
+          );
+        })}
+      </div>
+    </DragDropContext>
   );
 }
