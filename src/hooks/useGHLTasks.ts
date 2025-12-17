@@ -5,7 +5,6 @@ import { GHL_QUERY_KEYS } from '@/services/ghl/config';
 import type { GHLTaskCreate, GHLTaskUpdate } from '@/types/ghl';
 import { toast } from 'sonner';
 
-// ===== NEW: Fetch tasks for specific pipeline =====
 export function usePipelineTasks(pipelineId: string) {
   const { data: opportunitiesData, isLoading: isLoadingOpps } = useGHLOpportunities({ limit: 100 });
   
@@ -56,18 +55,20 @@ export function usePipelineTasks(pipelineId: string) {
       return allTasks;
     },
     enabled: !!opportunitiesData && !isLoadingOpps,
-    staleTime: 30000,
+    staleTime: 5 * 60 * 1000,   // ⭐ 5 minutes - tasks update more frequently
+    gcTime: 15 * 60 * 1000,     // ⭐ 15 minutes
   });
   
   return { ...tasksQuery, isLoading: isLoadingOpps || tasksQuery.isLoading };
 }
 
-// ===== Individual contact tasks =====
 export function useGHLContactTasks(contactId: string) {
   return useQuery({
     queryKey: GHL_QUERY_KEYS.contactTasks(contactId),
     queryFn: () => tasksApi.listByContact(contactId),
     enabled: !!contactId,
+    staleTime: 3 * 60 * 1000,   // ⭐ 3 minutes
+    gcTime: 10 * 60 * 1000,     // ⭐ 10 minutes
   });
 }
 
@@ -76,10 +77,11 @@ export function useGHLTask(contactId: string, taskId: string) {
     queryKey: [...GHL_QUERY_KEYS.contactTasks(contactId), taskId],
     queryFn: () => tasksApi.get(contactId, taskId),
     enabled: !!contactId && !!taskId,
+    staleTime: 2 * 60 * 1000,   // ⭐ 2 minutes
+    gcTime: 10 * 60 * 1000,     // ⭐ 10 minutes
   });
 }
 
-// ===== Mutations =====
 export function useCreateGHLTask() {
   const queryClient = useQueryClient();
   return useMutation({

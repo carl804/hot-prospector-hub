@@ -14,10 +14,34 @@ interface TaskKanbanBoardProps {
   onUpdatePriority?: (taskId: string, priority: Priority) => void;
 }
 
-const COLUMNS: { id: TaskStatus; title: string; color: string }[] = [
-  { id: 'todo', title: 'To Do', color: 'border-t-slate-500' },
-  { id: 'in_progress', title: 'In Progress', color: 'border-t-blue-500' },
-  { id: 'completed', title: 'Completed', color: 'border-t-green-500' },
+const COLUMNS: { 
+  id: TaskStatus; 
+  title: string; 
+  color: string;
+  gradient: string;
+  iconBg: string;
+}[] = [
+  { 
+    id: 'todo', 
+    title: 'To Do', 
+    color: 'border-t-slate-400 dark:border-t-slate-500',
+    gradient: 'from-slate-50 to-transparent dark:from-slate-900/50 dark:to-transparent',
+    iconBg: 'bg-slate-100 dark:bg-slate-800'
+  },
+  { 
+    id: 'in_progress', 
+    title: 'In Progress', 
+    color: 'border-t-blue-400 dark:border-t-blue-500',
+    gradient: 'from-blue-50 to-transparent dark:from-blue-900/30 dark:to-transparent',
+    iconBg: 'bg-blue-100 dark:bg-blue-900/50'
+  },
+  { 
+    id: 'completed', 
+    title: 'Completed', 
+    color: 'border-t-emerald-400 dark:border-t-emerald-500',
+    gradient: 'from-emerald-50 to-transparent dark:from-emerald-900/30 dark:to-transparent',
+    iconBg: 'bg-emerald-100 dark:bg-emerald-900/50'
+  },
 ];
 
 export function TaskKanbanBoard({
@@ -61,21 +85,42 @@ export function TaskKanbanBoard({
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="flex gap-6 h-full overflow-x-auto p-6">
+      <div className="flex gap-6 h-full overflow-x-auto p-8 bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
         {COLUMNS.map((column) => {
           const columnTasks = tasksByStatus[column.id] || [];
           return (
-            <div key={column.id} className="flex-1 min-w-[320px] max-w-[400px]">
-              <div className={cn('rounded-lg border-t-4 bg-card/50 h-full flex flex-col', column.color)}>
-                <div className="p-4 border-b border-border">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-semibold text-foreground">{column.title}</h3>
-                    <span className="text-xs font-medium text-muted-foreground bg-secondary px-2 py-1 rounded">
+            <div key={column.id} className="flex-shrink-0 w-[380px]">
+              <div 
+                className={cn(
+                  'rounded-2xl border-t-4 h-full flex flex-col overflow-hidden',
+                  'backdrop-blur-xl bg-white/40 dark:bg-gray-900/40',
+                  'border border-gray-200/50 dark:border-gray-700/50',
+                  'shadow-xl',
+                  column.color
+                )}
+              >
+                {/* Column Header */}
+                <div className={cn(
+                  'p-5 bg-gradient-to-b border-b border-gray-200/50 dark:border-gray-700/50',
+                  column.gradient
+                )}>
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-lg text-gray-900 dark:text-gray-50">
+                      {column.title}
+                    </h3>
+                    <span 
+                      className={cn(
+                        'text-sm font-bold px-3 py-1.5 rounded-full',
+                        column.iconBg,
+                        'text-gray-700 dark:text-gray-300'
+                      )}
+                    >
                       {columnTasks.length}
                     </span>
                   </div>
                 </div>
 
+                {/* Column Content */}
                 <Droppable droppableId={column.id}>
                   {(provided, snapshot) => (
                     <div
@@ -83,7 +128,9 @@ export function TaskKanbanBoard({
                       {...provided.droppableProps}
                       className={cn(
                         'flex-1 p-4 space-y-3 overflow-y-auto',
-                        snapshot.isDraggingOver && 'bg-secondary/30'
+                        'scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600',
+                        'scrollbar-track-transparent',
+                        snapshot.isDraggingOver && 'bg-primary/5 dark:bg-primary/10'
                       )}
                     >
                       {columnTasks.map((task, index) => (
@@ -94,8 +141,8 @@ export function TaskKanbanBoard({
                               {...provided.draggableProps}
                               {...provided.dragHandleProps}
                               className={cn(
-                                'transition-shadow',
-                                snapshot.isDragging && 'shadow-lg rotate-2'
+                                'transition-transform duration-200',
+                                snapshot.isDragging && 'rotate-3 scale-105 shadow-2xl'
                               )}
                             >
                               <div className="relative">
@@ -121,8 +168,10 @@ export function TaskKanbanBoard({
                       ))}
                       {provided.placeholder}
                       {columnTasks.length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground text-sm">
-                          No tasks
+                        <div className="text-center py-12">
+                          <div className="text-gray-400 dark:text-gray-600 text-sm font-medium">
+                            No tasks yet
+                          </div>
                         </div>
                       )}
                     </div>

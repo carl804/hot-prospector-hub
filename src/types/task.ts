@@ -4,13 +4,16 @@ export type TaskStatus = 'todo' | 'in_progress' | 'completed';
 export interface Task {
   id: string;
   title: string;
-  description?: string;
-  clientName: string;
+  description: string;
   clientId: string;
+  clientName: string;
+  contactId?: string;
   dueDate: string;
   priority: Priority;
   status: TaskStatus;
   category: string;
+  assignedTo?: string;
+  completed?: boolean;
   createdAt: string;
   completedAt?: string;
 }

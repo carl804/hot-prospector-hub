@@ -38,7 +38,6 @@ export function useGHLOpportunities(params?: {
           break;
         }
         
-        // Check for infinite loop
         const firstId = result.opportunities[0]?.id;
         if (firstId && seenIds.has(firstId)) {
           console.warn('⚠️ Infinite loop detected, stopping');
@@ -50,13 +49,11 @@ export function useGHLOpportunities(params?: {
         
         console.log(`✅ Page ${pageCount}: Got ${result.opportunities.length} (Total: ${allOpportunities.length})`);
         
-        // If less than 100, we're done
         if (result.opportunities.length < 100) {
           console.log('🏁 Got less than 100, reached end');
           break;
         }
         
-        // Get cursor for next page
         if (result.meta?.startAfter && result.meta?.startAfterId) {
           startAfter = result.meta.startAfter;
           startAfterId = result.meta.startAfterId;
@@ -70,7 +67,8 @@ export function useGHLOpportunities(params?: {
       console.log(`🎉 TOTAL FETCHED: ${allOpportunities.length} opportunities`);
       return { opportunities: allOpportunities, meta: { total: allOpportunities.length } };
     },
-    staleTime: 30000,
+    staleTime: 10 * 60 * 1000,  // ⭐ 10 minutes - data stays fresh
+    gcTime: 30 * 60 * 1000,     // ⭐ 30 minutes - keep in cache
   });
 }
 
@@ -79,6 +77,8 @@ export function useGHLOpportunity(id: string) {
     queryKey: GHL_QUERY_KEYS.opportunity(id),
     queryFn: () => opportunitiesApi.get(id),
     enabled: !!id,
+    staleTime: 5 * 60 * 1000,   // ⭐ 5 minutes
+    gcTime: 15 * 60 * 1000,     // ⭐ 15 minutes
   });
 }
 
@@ -86,6 +86,8 @@ export function useGHLPipelines() {
   return useQuery({
     queryKey: GHL_QUERY_KEYS.pipelines,
     queryFn: () => pipelinesApi.list(),
+    staleTime: 30 * 60 * 1000,  // ⭐ 30 minutes - pipelines rarely change
+    gcTime: 60 * 60 * 1000,     // ⭐ 1 hour
   });
 }
 
@@ -94,6 +96,8 @@ export function useGHLPipeline(id: string) {
     queryKey: GHL_QUERY_KEYS.pipeline(id),
     queryFn: () => pipelinesApi.get(id),
     enabled: !!id,
+    staleTime: 30 * 60 * 1000,  // ⭐ 30 minutes
+    gcTime: 60 * 60 * 1000,     // ⭐ 1 hour
   });
 }
 

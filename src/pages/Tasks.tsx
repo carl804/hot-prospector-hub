@@ -13,7 +13,7 @@ import {
   Flag,
   Trash2,
 } from 'lucide-react';
-import { Task, TaskStatus, TASK_CATEGORIES, Priority } from '@/types/task'; // ⭐ ADDED Priority
+import { Task, TaskStatus, TASK_CATEGORIES, Priority } from '@/types/task';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -39,7 +39,7 @@ import { cn } from '@/lib/utils';
 import { isToday, isPast, startOfDay, isWithinInterval, format, endOfDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { toast } from 'sonner';
-import { usePipelineTasks } from '@/hooks/useGHLTasks';
+import { usePipelineTasks, useCompleteGHLTask, useUpdateGHLTask } from '@/hooks/useGHLTasks';
 
 type ViewMode = 'kanban' | 'list';
 
@@ -47,8 +47,12 @@ const TARGET_PIPELINE_ID = "QNloaHE61P6yedF6jEzk"; // 002. Account Setup
 
 export default function Tasks() {
   // ⭐ FETCH REAL TASKS FROM GHL
-  const { data: tasksData = [], isLoading } = usePipelineTasks(TARGET_PIPELINE_ID);
+  const { data: tasksData = [], isLoading, refetch } = usePipelineTasks(TARGET_PIPELINE_ID);
   const [tasks, setTasks] = useState<Task[]>([]);
+
+  // ⭐ GHL MUTATION HOOKS
+  const completeTaskMutation = useCompleteGHLTask();
+  const updateTaskMutation = useUpdateGHLTask();
 
   // Update tasks when data loads
   useEffect(() => {
@@ -89,7 +93,6 @@ export default function Tasks() {
       const matchesClient = clientFilter === 'all' || task.clientId === clientFilter;
       const matchesPriority = priorityFilter === 'all' || task.priority === priorityFilter;
 
-      // Date range filter
       let matchesDateRange = true;
       if (dateRange?.from && task.dueDate) {
         const taskDate = new Date(task.dueDate);
@@ -126,31 +129,95 @@ export default function Tasks() {
     };
   }, [tasks]);
 
+  // ⭐ SYNC TO GHL: Toggle task completion
   const handleToggleTask = (taskId: string) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.contactId) {
+      toast.error('Cannot update task: missing contact information');
+      return;
+    }
+
+    const newStatus = task.status === 'completed' ? 'todo' : 'completed';
+    const isCompleted = newStatus === 'completed';
+
+    // Optimistic update
     setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId
+      prev.map((t) =>
+        t.id === taskId
           ? {
-              ...task,
-              status: task.status === 'completed' ? 'todo' : 'completed',
-              completedAt: task.status === 'completed' ? undefined : new Date().toISOString(),
+              ...t,
+              status: newStatus,
+              completed: isCompleted,
+              completedAt: isCompleted ? new Date().toISOString() : undefined,
             }
-          : task
+          : t
       )
+    );
+
+    // Sync to GHL
+    completeTaskMutation.mutate(
+      {
+        contactId: task.contactId,
+        taskId: task.id,
+        completed: isCompleted,
+      },
+      {
+        onError: () => {
+          // Revert on error
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === taskId ? task : t
+            )
+          );
+          toast.error('Failed to update task');
+        },
+      }
     );
   };
 
+  // ⭐ SYNC TO GHL: Update task status
   const handleUpdateTaskStatus = (taskId: string, newStatus: TaskStatus) => {
+    const task = tasks.find(t => t.id === taskId);
+    if (!task || !task.contactId) {
+      toast.error('Cannot update task: missing contact information');
+      return;
+    }
+
+    const isCompleted = newStatus === 'completed';
+    const previousTask = { ...task };
+
+    // Optimistic update
     setTasks((prev) =>
-      prev.map((task) =>
-        task.id === taskId
+      prev.map((t) =>
+        t.id === taskId
           ? {
-              ...task,
+              ...t,
               status: newStatus,
-              completedAt: newStatus === 'completed' ? new Date().toISOString() : undefined,
+              completed: isCompleted,
+              completedAt: isCompleted ? new Date().toISOString() : undefined,
             }
-          : task
+          : t
       )
+    );
+
+    // Sync to GHL
+    completeTaskMutation.mutate(
+      {
+        contactId: task.contactId,
+        taskId: task.id,
+        completed: isCompleted,
+      },
+      {
+        onError: () => {
+          // Revert on error
+          setTasks((prev) =>
+            prev.map((t) =>
+              t.id === taskId ? previousTask : t
+            )
+          );
+          toast.error('Failed to update task status');
+        },
+      }
     );
   };
 
@@ -234,13 +301,14 @@ export default function Tasks() {
     setSelectedTaskIds(new Set());
   };
 
-  // ⭐ NEW: Handle priority update
+  // ⭐ PRIORITY UPDATE (Local only - GHL doesn't support priority field)
   const handleUpdatePriority = (taskId: string, priority: Priority) => {
     setTasks((prev) =>
       prev.map((task) =>
         task.id === taskId ? { ...task, priority } : task
       )
     );
+    // Note: Priority is stored locally only since GHL doesn't have a priority field
   };
 
   const handleAddTaskForClient = (clientId: string) => {
@@ -252,7 +320,6 @@ export default function Tasks() {
     setDateRange(undefined);
   };
 
-  // ⭐ LOADING STATE
   if (isLoading) {
     return (
       <div className="flex flex-col h-full bg-background p-8">
@@ -272,7 +339,6 @@ export default function Tasks() {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header */}
       <header className="border-b border-border bg-card px-6 py-4 shrink-0">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -285,7 +351,6 @@ export default function Tasks() {
           </Button>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-4 gap-3 mb-4">
           <div className="bg-secondary/50 rounded-lg p-3">
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -334,7 +399,6 @@ export default function Tasks() {
           </div>
         </div>
 
-        {/* Filters Row 1 */}
         <div className="flex items-center gap-3 mb-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -392,7 +456,6 @@ export default function Tasks() {
             </SelectContent>
           </Select>
 
-          {/* Date Range Picker */}
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -459,7 +522,6 @@ export default function Tasks() {
           </div>
         </div>
 
-        {/* Bulk Actions Bar */}
         {selectedTaskIds.size > 0 && (
           <div className="flex items-center gap-3 p-3 bg-primary/10 rounded-lg animate-fade-in">
             <div className="flex items-center gap-2">
@@ -518,7 +580,6 @@ export default function Tasks() {
         )}
       </header>
 
-      {/* Content */}
       <div className="flex-1 overflow-hidden">
         {viewMode === 'kanban' ? (
           <TaskKanbanBoard
@@ -542,7 +603,6 @@ export default function Tasks() {
         )}
       </div>
 
-      {/* Task Detail */}
       {selectedTask && (
         <TaskDetail
           task={selectedTask}
@@ -551,7 +611,6 @@ export default function Tasks() {
         />
       )}
 
-      {/* Add Task Modal */}
       {showAddModal && (
         <AddTaskModal
           onClose={() => {
