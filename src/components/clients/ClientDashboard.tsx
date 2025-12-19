@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClientCard } from './ClientCard';
+import { NotesModal } from '@/components/notes/NotesModal';
 import { useGHLOpportunities } from '@/hooks/useGHLOpportunities';
 import { usePipelineTasks } from '@/hooks/useGHLTasks';
 
@@ -21,6 +22,7 @@ export function ClientDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [csmFilter, setCsmFilter] = useState('all');
+  const [notesClient, setNotesClient] = useState<{ contactId: string; name: string; tasks: any[] } | null>(null);
 
   const clients: Client[] = useMemo(() => {
     console.log('====== CLIENT MAPPING DEBUG ======');
@@ -199,11 +201,40 @@ export function ClientDashboard() {
               key={client.id}
               client={client}
               tasks={client.tasks}
-              contactId={(client as any).contactId}
-              onClick={() => console.log('Clicked:', client.name)}
+              onClick={() => {
+                // Clicking the card also opens notes modal
+                if (client.contactId) {
+                  setNotesClient({
+                    contactId: client.contactId,
+                    name: client.name,
+                    tasks: client.tasks,
+                  });
+                }
+              }}
+              onNotesClick={(e) => {
+                e.stopPropagation();
+                if (client.contactId) {
+                  setNotesClient({
+                    contactId: client.contactId,
+                    name: client.name,
+                    tasks: client.tasks,
+                  });
+                }
+              }}
             />
           ))}
         </div>
+      )}
+
+      {/* Notes Modal */}
+      {notesClient && (
+        <NotesModal
+          contactId={notesClient.contactId}
+          clientName={notesClient.name}
+          completedTasks={notesClient.tasks.filter((t: any) => t.status === 'completed').length}
+          totalTasks={notesClient.tasks.length}
+          onClose={() => setNotesClient(null)}
+        />
       )}
     </div>
   );

@@ -1,23 +1,17 @@
-import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { format, differenceInDays } from 'date-fns';
 import { CheckCircle2, Circle } from 'lucide-react';
 import { Opportunity, CSM } from '@/types/opportunity';
 import { cn } from '@/lib/utils';
-import { NotesIndicator } from '@/components/notes/NotesIndicator';
-import { NotesModal } from '@/components/notes/NotesModal';
 
 interface OpportunityCardProps {
   opportunity: Opportunity;
   csm: CSM | undefined;
   onClick: () => void;
-  contactId?: string;
 }
 
-export function OpportunityCard({ opportunity, csm, onClick, contactId }: OpportunityCardProps) {
-  const [showNotesModal, setShowNotesModal] = useState(false);
-
+export function OpportunityCard({ opportunity, csm, onClick }: OpportunityCardProps) {
   const {
     attributes,
     listeners,
@@ -33,11 +27,6 @@ export function OpportunityCard({ opportunity, csm, onClick, contactId }: Opport
   };
 
   const daysUntilDeadline = differenceInDays(new Date(opportunity.deadline), new Date());
-
-  const handleNotesClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowNotesModal(true);
-  };
 
   const getDeadlineBadgeClass = () => {
     if (daysUntilDeadline < 0) return 'bg-destructive/15 text-destructive border-destructive/20';
@@ -64,18 +53,11 @@ export function OpportunityCard({ opportunity, csm, onClick, contactId }: Opport
         isDragging && 'shadow-card-dragging opacity-95 rotate-1 scale-[1.02] z-50'
       )}
     >
-      {/* Header with Agency Name and Notes */}
+      {/* Header with Agency Name */}
       <div className="flex items-start justify-between mb-2">
         <h3 className="font-semibold text-foreground text-sm leading-tight truncate flex-1 pr-2">
           {opportunity.agencyName}
         </h3>
-        {contactId && (
-          <NotesIndicator
-            contactId={contactId}
-            onClick={handleNotesClick}
-            className="shrink-0 -mr-1 -mt-0.5"
-          />
-        )}
       </div>
 
       {/* Contact Name */}
@@ -191,17 +173,6 @@ export function OpportunityCard({ opportunity, csm, onClick, contactId }: Opport
           />
         </div>
       </div>
-
-      {/* Notes Modal */}
-      {showNotesModal && contactId && (
-        <NotesModal
-          contactId={contactId}
-          clientName={opportunity.agencyName}
-          onClose={() => setShowNotesModal(false)}
-          completedTasks={completedTasks}
-          totalTasks={totalTasks}
-        />
-      )}
     </div>
   );
 }

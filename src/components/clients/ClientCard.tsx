@@ -1,22 +1,18 @@
-import { useState } from 'react';
 import { Building2, CheckCircle2, Clock, AlertTriangle, ChevronRight, Calendar, GitBranch } from 'lucide-react';
 import { Client, CSM_LIST, PIPELINE_STAGES } from '@/types/client';
 import { Task } from '@/types/task';
 import { cn } from '@/lib/utils';
 import { isToday, isPast, startOfDay } from 'date-fns';
 import { NotesIndicator } from '@/components/notes/NotesIndicator';
-import { NotesModal } from '@/components/notes/NotesModal';
 
 interface ClientCardProps {
-  client: Client;
+  client: Client & { contactId?: string | null };
   tasks: Task[];
   onClick: () => void;
-  contactId?: string;
+  onNotesClick: (e: React.MouseEvent) => void;
 }
 
-export function ClientCard({ client, tasks, onClick, contactId }: ClientCardProps) {
-  const [showNotesModal, setShowNotesModal] = useState(false);
-
+export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardProps) {
   const completedTasks = tasks.filter((t) => t.status === 'completed').length;
   const totalTasks = tasks.length;
   const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -35,11 +31,6 @@ export function ClientCard({ client, tasks, onClick, contactId }: ClientCardProp
   const isComplete = client.status === 'completed' || progress === 100;
   const csm = CSM_LIST.find((c) => c.id === client.assignedCsmId);
   const stage = PIPELINE_STAGES.find((s) => s.id === client.pipelineStage);
-
-  const handleNotesClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setShowNotesModal(true);
-  };
 
   return (
     <div
@@ -75,10 +66,10 @@ export function ClientCard({ client, tasks, onClick, contactId }: ClientCardProp
           </div>
         </div>
         <div className="flex items-center gap-1">
-          {contactId && (
+          {client.contactId && (
             <NotesIndicator
-              contactId={contactId}
-              onClick={handleNotesClick}
+              contactId={client.contactId}
+              onClick={onNotesClick}
             />
           )}
           <ChevronRight className="w-4 h-4 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5" />
@@ -173,17 +164,6 @@ export function ClientCard({ client, tasks, onClick, contactId }: ClientCardProp
           </div>
         )}
       </div>
-
-      {/* Notes Modal */}
-      {showNotesModal && contactId && (
-        <NotesModal
-          contactId={contactId}
-          clientName={client.name}
-          onClose={() => setShowNotesModal(false)}
-          completedTasks={completedTasks}
-          totalTasks={totalTasks}
-        />
-      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { format } from 'date-fns';
 import {
   X,
@@ -160,8 +161,8 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 animate-fade-in">
+  const modalContent = (
+    <div className="fixed inset-0 z-[100] animate-fade-in">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
@@ -464,4 +465,7 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
       </AlertDialog>
     </div>
   );
+
+  // Use React Portal to render at document body level to avoid z-index issues
+  return createPortal(modalContent, document.body);
 }
