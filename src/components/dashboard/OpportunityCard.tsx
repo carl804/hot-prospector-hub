@@ -38,12 +38,12 @@ export function OpportunityCard({ opportunity, csm, onClick, contactId }: Opport
     e.stopPropagation();
     setShowNotesModal(true);
   };
-  
+
   const getDeadlineBadgeClass = () => {
-    if (daysUntilDeadline < 0) return 'bg-badge-red-bg text-badge-red-text';
-    if (daysUntilDeadline <= 3) return 'bg-badge-red-bg text-badge-red-text';
-    if (daysUntilDeadline <= 7) return 'bg-badge-yellow-bg text-badge-yellow-text';
-    return 'bg-badge-green-bg text-badge-green-text';
+    if (daysUntilDeadline < 0) return 'bg-destructive/15 text-destructive border-destructive/20';
+    if (daysUntilDeadline <= 3) return 'bg-destructive/15 text-destructive border-destructive/20';
+    if (daysUntilDeadline <= 7) return 'bg-warning/15 text-warning border-warning/20';
+    return 'bg-success/15 text-success border-success/20';
   };
 
   const completedTasks = opportunity.tasks.filter((t) => t.completed).length;
@@ -58,22 +58,22 @@ export function OpportunityCard({ opportunity, csm, onClick, contactId }: Opport
       {...listeners}
       onClick={onClick}
       className={cn(
-        'bg-card rounded-lg p-4 cursor-pointer border border-border',
+        'group bg-card rounded-xl p-4 cursor-pointer border border-border/50',
         'transition-all duration-200 ease-out',
-        'hover:shadow-card-hover hover:border-primary/20',
-        isDragging && 'shadow-card-dragging opacity-90 rotate-2 scale-105 z-50'
+        'hover:shadow-card-hover hover:border-primary/20 hover:-translate-y-0.5',
+        isDragging && 'shadow-card-dragging opacity-95 rotate-1 scale-[1.02] z-50'
       )}
     >
       {/* Header with Agency Name and Notes */}
-      <div className="flex items-start justify-between mb-1">
-        <h3 className="font-semibold text-foreground text-sm truncate flex-1">
+      <div className="flex items-start justify-between mb-2">
+        <h3 className="font-semibold text-foreground text-sm leading-tight truncate flex-1 pr-2">
           {opportunity.agencyName}
         </h3>
         {contactId && (
           <NotesIndicator
             contactId={contactId}
             onClick={handleNotesClick}
-            className="ml-2 -mr-1 -mt-0.5"
+            className="shrink-0 -mr-1 -mt-0.5"
           />
         )}
       </div>
@@ -84,11 +84,11 @@ export function OpportunityCard({ opportunity, csm, onClick, contactId }: Opport
       </p>
 
       {/* CSM and Deadline Row */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 gap-2">
         {csm && (
           <div
             className={cn(
-              'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-medium text-primary-foreground',
+              'w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-semibold text-primary-foreground shadow-sm',
               csm.color
             )}
             title={csm.name}
@@ -96,71 +96,100 @@ export function OpportunityCard({ opportunity, csm, onClick, contactId }: Opport
             {csm.initials}
           </div>
         )}
-        <span className={cn('text-[10px] font-medium px-2 py-0.5 rounded-full', getDeadlineBadgeClass())}>
+        <span className={cn(
+          'text-[10px] font-semibold px-2.5 py-1 rounded-full border',
+          getDeadlineBadgeClass()
+        )}>
           {daysUntilDeadline < 0
             ? `${Math.abs(daysUntilDeadline)}d overdue`
             : daysUntilDeadline === 0
-            ? 'Today'
-            : `${daysUntilDeadline}d left`}
+              ? 'Today'
+              : `${daysUntilDeadline}d left`}
         </span>
       </div>
 
       {/* Status Indicators */}
-      <div className="space-y-1.5 mb-3">
-        <div className="flex items-center gap-2 text-[11px]">
+      <div className="space-y-2 mb-4">
+        <div className="flex items-center gap-2.5 text-[11px]">
           {opportunity.assessmentBooked ? (
             <>
-              <CheckCircle2 className="w-3 h-3 text-success" />
+              <div className="w-4 h-4 rounded-full bg-success/15 flex items-center justify-center">
+                <CheckCircle2 className="w-3 h-3 text-success" />
+              </div>
               <span className="text-muted-foreground">
                 Assessment: {format(new Date(opportunity.assessmentDate!), 'MMM d')}
               </span>
             </>
           ) : (
             <>
-              <Circle className="w-3 h-3 text-muted-foreground/50" />
-              <span className="text-muted-foreground/60">Assessment</span>
+              <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center">
+                <Circle className="w-3 h-3 text-muted-foreground/50" />
+              </div>
+              <span className="text-muted-foreground/50">Assessment</span>
             </>
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-[11px]">
+        <div className="flex items-center gap-2.5 text-[11px]">
           {opportunity.onboardingBooked ? (
             <>
-              <CheckCircle2 className="w-3 h-3 text-success" />
+              <div className="w-4 h-4 rounded-full bg-success/15 flex items-center justify-center">
+                <CheckCircle2 className="w-3 h-3 text-success" />
+              </div>
               <span className="text-muted-foreground">
                 Onboarding: {format(new Date(opportunity.onboardingDate!), 'MMM d')}
               </span>
             </>
           ) : (
             <>
-              <Circle className="w-3 h-3 text-muted-foreground/50" />
-              <span className="text-muted-foreground/60">Onboarding</span>
+              <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center">
+                <Circle className="w-3 h-3 text-muted-foreground/50" />
+              </div>
+              <span className="text-muted-foreground/50">Onboarding</span>
             </>
           )}
         </div>
 
-        <div className="flex items-center gap-2 text-[11px]">
+        <div className="flex items-center gap-2.5 text-[11px]">
           <div
             className={cn(
-              'w-2.5 h-2.5 rounded-full',
-              opportunity.ghlAccessReady ? 'bg-success' : 'bg-destructive'
+              'w-4 h-4 rounded-full flex items-center justify-center',
+              opportunity.ghlAccessReady ? 'bg-success/15' : 'bg-destructive/15'
             )}
-          />
-          <span className="text-muted-foreground">GHL Access</span>
+          >
+            <div
+              className={cn(
+                'w-2 h-2 rounded-full',
+                opportunity.ghlAccessReady ? 'bg-success' : 'bg-destructive'
+              )}
+            />
+          </div>
+          <span className={cn(
+            'text-muted-foreground',
+            !opportunity.ghlAccessReady && 'text-muted-foreground/50'
+          )}>
+            GHL Access
+          </span>
         </div>
       </div>
 
       {/* Task Progress */}
-      <div className="flex items-center gap-2">
-        <div className="flex-1 h-1.5 bg-secondary rounded-full overflow-hidden">
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-[10px] text-muted-foreground">Progress</span>
+          <span className="text-[10px] font-semibold text-foreground">
+            {completedTasks}/{totalTasks}
+          </span>
+        </div>
+        <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
           <div
-            className="h-full bg-primary rounded-full transition-all duration-300"
+            className={cn(
+              'h-full rounded-full transition-all duration-500',
+              taskProgress === 100 ? 'bg-success' : 'bg-primary'
+            )}
             style={{ width: `${taskProgress}%` }}
           />
         </div>
-        <span className="text-[10px] font-medium text-muted-foreground">
-          {completedTasks}/{totalTasks}
-        </span>
       </div>
 
       {/* Notes Modal */}

@@ -1,142 +1,180 @@
+/* Modern 2025 SaaS Design System */
+/* Using Geist font family from Vercel - optimized for UI */
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
+    /* 2025 Modern SaaS Color System - Clean, Minimal, Professional */
 
+    /* Base Colors - Softer, more neutral */
+    --background: 0 0% 99%;
+    --foreground: 240 10% 4%;
+
+    /* Card - Pure white with subtle depth */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 240 10% 4%;
 
+    /* Popover - Matches card */
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover-foreground: 240 10% 4%;
 
-    --primary: 217 91% 60%;
+    /* Primary - Refined blue (less saturated, more professional) */
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222 47% 11%;
+    /* Secondary - Very subtle gray */
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    /* Muted - For subtle backgrounds */
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
 
-    --accent: 210 40% 96%;
-    --accent-foreground: 222 47% 11%;
+    /* Accent - Subtle highlight */
+    --accent: 240 5% 96%;
+    --accent-foreground: 240 6% 10%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
-
-    --radius: 0.5rem;
-
-    /* Light mode sidebar - clean white/gray */
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 20%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 217 91% 60%;
-
-    /* Custom dashboard tokens */
-    --kanban-bg: 210 20% 96%;
-    --kanban-column-bg: 210 20% 98%;
-    --card-shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --card-shadow-hover: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
-    --card-shadow-dragging: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
-
-    /* Status colors */
-    --status-overdue: 0 84% 60%;
-    --status-urgent: 38 92% 50%;
-    --status-safe: 142 76% 36%;
-    --status-neutral: 215 16% 47%;
-
-    /* Badge colors - light mode */
-    --badge-green-bg: 142 76% 94%;
-    --badge-green-text: 142 76% 30%;
-    --badge-yellow-bg: 45 93% 90%;
-    --badge-yellow-text: 38 92% 40%;
-    --badge-red-bg: 0 84% 94%;
-    --badge-red-text: 0 84% 40%;
-    --badge-blue-bg: 217 91% 94%;
-    --badge-blue-text: 217 91% 40%;
-    --badge-gray-bg: 210 40% 94%;
-    --badge-gray-text: 215 16% 40%;
-  }
-
-  .dark {
-    --background: 222 47% 7%;
-    --foreground: 210 40% 98%;
-
-    --card: 222 47% 10%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222 47% 10%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
-
+    /* Status Colors - Modern, softer */
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 142 76% 42%;
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 0 0% 0%;
 
-    --border: 217 33% 20%;
-    --input: 217 33% 17%;
+    /* Borders & Inputs - Subtle, refined */
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 221 83% 53%;
+
+    /* Modern radius - Slightly larger for softer feel */
+    --radius: 0.625rem;
+
+    /* Sidebar - Clean, professional */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 6% 25%;
+    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 240 6% 10%;
+    --sidebar-border: 240 6% 92%;
+    --sidebar-ring: 221 83% 53%;
+
+    /* Dashboard/Kanban - Subtle backgrounds */
+    --kanban-bg: 240 5% 97%;
+    --kanban-column-bg: 0 0% 100%;
+
+    /* Modern Shadows - Softer, more diffused */
+    --card-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.03), 0 1px 3px 0 rgb(0 0 0 / 0.06);
+    --card-shadow-hover: 0 4px 12px 0 rgb(0 0 0 / 0.05), 0 2px 4px 0 rgb(0 0 0 / 0.03);
+    --card-shadow-dragging: 0 25px 50px -12px rgb(0 0 0 / 0.15);
+    --shadow-glow: 0 0 0 3px rgb(59 130 246 / 0.1);
+
+    /* Status indicators */
+    --status-overdue: 0 72% 51%;
+    --status-urgent: 38 92% 50%;
+    --status-safe: 142 71% 45%;
+    --status-neutral: 240 4% 46%;
+
+    /* Badge System - Softer, more refined */
+    --badge-green-bg: 142 76% 94%;
+    --badge-green-text: 142 71% 35%;
+    --badge-yellow-bg: 48 96% 89%;
+    --badge-yellow-text: 32 95% 35%;
+    --badge-red-bg: 0 93% 94%;
+    --badge-red-text: 0 72% 45%;
+    --badge-blue-bg: 214 95% 93%;
+    --badge-blue-text: 221 83% 45%;
+    --badge-gray-bg: 240 5% 92%;
+    --badge-gray-text: 240 4% 40%;
+    --badge-purple-bg: 270 95% 94%;
+    --badge-purple-text: 271 91% 45%;
+
+    /* Chart colors - Modern palette */
+    --chart-1: 221 83% 53%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 271 91% 65%;
+    --chart-5: 0 72% 51%;
+  }
+
+  .dark {
+    /* Dark Mode - Rich, deep, modern */
+    --background: 240 10% 4%;
+    --foreground: 0 0% 95%;
+
+    --card: 240 10% 6%;
+    --card-foreground: 0 0% 95%;
+
+    --popover: 240 10% 6%;
+    --popover-foreground: 0 0% 95%;
+
+    /* Primary - Slightly brighter in dark mode */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 240 4% 16%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
+
+    --accent: 240 4% 16%;
+    --accent-foreground: 0 0% 95%;
+
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
     --ring: 217 91% 60%;
 
-    /* Dark mode sidebar - sleek dark panel */
-    --sidebar-background: 222 47% 9%;
-    --sidebar-foreground: 210 40% 90%;
+    /* Sidebar - Dark, refined */
+    --sidebar-background: 240 10% 5%;
+    --sidebar-foreground: 0 0% 85%;
     --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 18%;
+    --sidebar-accent: 240 4% 14%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 240 4% 14%;
     --sidebar-ring: 217 91% 60%;
 
-    --kanban-bg: 222 47% 5%;
-    --kanban-column-bg: 222 47% 8%;
+    --kanban-bg: 240 10% 3%;
+    --kanban-column-bg: 240 10% 6%;
 
-    /* Badge colors - dark mode */
-    --badge-green-bg: 142 50% 18%;
-    --badge-green-text: 142 76% 60%;
-    --badge-yellow-bg: 45 50% 18%;
-    --badge-yellow-text: 45 93% 60%;
-    --badge-red-bg: 0 50% 18%;
-    --badge-red-text: 0 84% 65%;
-    --badge-blue-bg: 217 50% 18%;
+    /* Dark mode badges - Adjusted for contrast */
+    --badge-green-bg: 142 50% 12%;
+    --badge-green-text: 142 71% 55%;
+    --badge-yellow-bg: 45 50% 12%;
+    --badge-yellow-text: 45 93% 55%;
+    --badge-red-bg: 0 50% 12%;
+    --badge-red-text: 0 72% 60%;
+    --badge-blue-bg: 217 50% 14%;
     --badge-blue-text: 217 91% 70%;
-    --badge-gray-bg: 217 33% 17%;
-    --badge-gray-text: 215 20% 65%;
+    --badge-gray-bg: 240 4% 14%;
+    --badge-gray-text: 240 5% 65%;
+    --badge-purple-bg: 270 50% 14%;
+    --badge-purple-text: 271 91% 70%;
+
+    /* Chart colors - Dark mode */
+    --chart-1: 217 91% 60%;
+    --chart-2: 142 71% 45%;
+    --chart-3: 38 92% 50%;
+    --chart-4: 271 91% 65%;
+    --chart-5: 0 62% 50%;
   }
 }
 
@@ -148,6 +186,7 @@
   /* Smooth theme transitions */
   html {
     color-scheme: light;
+    scroll-behavior: smooth;
   }
 
   html.dark {
@@ -168,31 +207,118 @@
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography refinements */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl lg:text-4xl;
+  }
+
+  h2 {
+    @apply text-2xl lg:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl lg:text-2xl;
+  }
+
+  /* Code/Mono text */
+  code, pre, .font-mono {
+    font-family: 'Geist Mono', 'SF Mono', 'Fira Code', 'Fira Mono', Menlo, Monaco, Consolas, monospace;
   }
 }
 
 @layer components {
-  .kanban-scrollbar::-webkit-scrollbar {
-    height: 8px;
-    width: 8px;
+  /* Modern scrollbar */
+  .kanban-scrollbar::-webkit-scrollbar,
+  .modern-scrollbar::-webkit-scrollbar {
+    height: 6px;
+    width: 6px;
   }
 
-  .kanban-scrollbar::-webkit-scrollbar-track {
+  .kanban-scrollbar::-webkit-scrollbar-track,
+  .modern-scrollbar::-webkit-scrollbar-track {
     @apply bg-transparent;
   }
 
-  .kanban-scrollbar::-webkit-scrollbar-thumb {
+  .kanban-scrollbar::-webkit-scrollbar-thumb,
+  .modern-scrollbar::-webkit-scrollbar-thumb {
     @apply bg-border rounded-full;
   }
 
-  .kanban-scrollbar::-webkit-scrollbar-thumb:hover {
-    @apply bg-muted-foreground/30;
+  .kanban-scrollbar::-webkit-scrollbar-thumb:hover,
+  .modern-scrollbar::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+
+  /* Glassmorphism utility */
+  .glass {
+    @apply bg-background/80 backdrop-blur-xl border border-white/20;
+  }
+
+  .glass-subtle {
+    @apply bg-background/60 backdrop-blur-md;
+  }
+
+  /* Gradient text utility */
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary to-blue-400 bg-clip-text text-transparent;
+  }
+
+  /* Focus ring */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  /* Modern card hover */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-lg hover:shadow-black/5 hover:-translate-y-0.5;
+  }
+
+  /* Glow effect on focus */
+  .glow-on-focus:focus-within {
+    box-shadow: var(--shadow-glow);
+  }
+
+  /* Subtle gradient background */
+  .bg-gradient-subtle {
+    @apply bg-gradient-to-b from-background to-muted/30;
+  }
+
+  /* Modern input styling */
+  .input-modern {
+    @apply bg-secondary/50 border-transparent focus:bg-background focus:border-border transition-colors;
+  }
+
+  /* Status indicator dot */
+  .status-dot {
+    @apply w-2 h-2 rounded-full;
+  }
+
+  .status-dot-success {
+    @apply bg-success shadow-[0_0_8px_var(--success)];
+  }
+
+  .status-dot-warning {
+    @apply bg-warning shadow-[0_0_8px_var(--warning)];
+  }
+
+  .status-dot-error {
+    @apply bg-destructive shadow-[0_0_8px_var(--destructive)];
   }
 }
 
 @layer utilities {
+  /* Animation utilities */
   .animate-slide-in-right {
     animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
@@ -207,6 +333,21 @@
 
   .animate-scale-in {
     animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-pulse-subtle {
+    animation: pulseSubtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    background-size: 200% 100%;
   }
 
   @keyframes slideInRight {
@@ -249,5 +390,38 @@
       transform: scale(1);
       opacity: 1;
     }
+  }
+
+  @keyframes pulseSubtle {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.7;
+    }
+  }
+
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Text balance utility */
+  .text-balance {
+    text-wrap: balance;
   }
 }

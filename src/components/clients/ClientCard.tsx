@@ -45,17 +45,19 @@ export function ClientCard({ client, tasks, onClick, contactId }: ClientCardProp
     <div
       onClick={onClick}
       className={cn(
-        'group bg-card rounded-xl border border-border p-5 cursor-pointer',
-        'transition-all duration-200 hover:shadow-card-hover hover:border-primary/20',
+        'group bg-card rounded-xl border border-border/50 p-5 cursor-pointer',
+        'transition-all duration-200 hover:shadow-card-hover hover:border-primary/20 hover:-translate-y-0.5',
         isComplete && 'opacity-70'
       )}
     >
       {/* Header */}
-      <div className="flex items-start justify-between mb-3">
+      <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
           <div className={cn(
-            'w-10 h-10 rounded-lg flex items-center justify-center',
-            isComplete ? 'bg-success/10' : 'bg-primary/10'
+            'w-11 h-11 rounded-xl flex items-center justify-center shadow-sm',
+            isComplete
+              ? 'bg-gradient-to-br from-success/20 to-success/10'
+              : 'bg-gradient-to-br from-primary/20 to-primary/10'
           )}>
             {isComplete ? (
               <CheckCircle2 className="w-5 h-5 text-success" />
@@ -79,14 +81,17 @@ export function ClientCard({ client, tasks, onClick, contactId }: ClientCardProp
               onClick={handleNotesClick}
             />
           )}
-          <ChevronRight className="w-4 h-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+          <ChevronRight className="w-4 h-4 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5" />
         </div>
       </div>
 
       {/* CSM Badge */}
       {csm && (
-        <div className="flex items-center gap-2 mb-3">
-          <div className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-medium text-primary-foreground', csm.color)}>
+        <div className="flex items-center gap-2.5 mb-4">
+          <div className={cn(
+            'w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-semibold text-primary-foreground shadow-sm',
+            csm.color
+          )}>
             {csm.initials}
           </div>
           <span className="text-xs text-muted-foreground">{csm.name}</span>
@@ -94,10 +99,10 @@ export function ClientCard({ client, tasks, onClick, contactId }: ClientCardProp
       )}
 
       {/* Pipeline Stage & Booking Status Row */}
-      <div className="flex items-center gap-2 mb-3 flex-wrap">
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
         {/* Pipeline Stage */}
         {stage && (
-          <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full bg-badge-blue-bg text-badge-blue-text">
+          <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
             <GitBranch className="w-3 h-3" />
             {stage.label}
           </span>
@@ -105,15 +110,19 @@ export function ClientCard({ client, tasks, onClick, contactId }: ClientCardProp
 
         {/* Booking Status */}
         <div className={cn(
-          'flex items-center gap-1 text-[10px] px-2 py-1 rounded-full',
-          client.assessmentBooked ? 'bg-badge-green-bg text-badge-green-text' : 'bg-secondary text-muted-foreground/60'
+          'flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-full border',
+          client.assessmentBooked
+            ? 'bg-success/10 text-success border-success/20'
+            : 'bg-muted text-muted-foreground/60 border-border'
         )}>
           {client.assessmentBooked ? <CheckCircle2 className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
           <span>Assessment</span>
         </div>
         <div className={cn(
-          'flex items-center gap-1 text-[10px] px-2 py-1 rounded-full',
-          client.onboardingBooked ? 'bg-badge-green-bg text-badge-green-text' : 'bg-secondary text-muted-foreground/60'
+          'flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-full border',
+          client.onboardingBooked
+            ? 'bg-success/10 text-success border-success/20'
+            : 'bg-muted text-muted-foreground/60 border-border'
         )}>
           {client.onboardingBooked ? <CheckCircle2 className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
           <span>Onboarding</span>
@@ -121,12 +130,12 @@ export function ClientCard({ client, tasks, onClick, contactId }: ClientCardProp
       </div>
 
       {/* Progress Bar */}
-      <div className="mb-3">
-        <div className="flex items-center justify-between text-xs mb-1.5">
+      <div className="mb-4">
+        <div className="flex items-center justify-between text-xs mb-2">
           <span className="text-muted-foreground">Progress</span>
-          <span className="font-medium text-foreground">{completedTasks}/{totalTasks} tasks</span>
+          <span className="font-semibold text-foreground">{completedTasks}/{totalTasks} tasks</span>
         </div>
-        <div className="h-2 bg-secondary dark:bg-secondary/50 rounded-full overflow-hidden">
+        <div className="h-2 bg-secondary rounded-full overflow-hidden">
           <div
             className={cn(
               'h-full rounded-full transition-all duration-500',
@@ -140,15 +149,15 @@ export function ClientCard({ client, tasks, onClick, contactId }: ClientCardProp
       {/* Stats */}
       <div className="flex items-center gap-4">
         {overdueTasks > 0 && (
-          <div className="flex items-center gap-1.5 text-destructive">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium">{overdueTasks} overdue</span>
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-destructive/10">
+            <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
+            <span className="text-xs font-semibold text-destructive">{overdueTasks} overdue</span>
           </div>
         )}
         {dueTodayTasks > 0 && (
-          <div className="flex items-center gap-1.5 text-primary">
-            <Clock className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium">{dueTodayTasks} due today</span>
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10">
+            <Clock className="w-3.5 h-3.5 text-primary" />
+            <span className="text-xs font-semibold text-primary">{dueTodayTasks} due today</span>
           </div>
         )}
         {overdueTasks === 0 && dueTodayTasks === 0 && !isComplete && (
@@ -158,9 +167,9 @@ export function ClientCard({ client, tasks, onClick, contactId }: ClientCardProp
           </div>
         )}
         {isComplete && (
-          <div className="flex items-center gap-1.5 text-success">
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            <span className="text-xs font-medium">Setup Complete</span>
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-success/10">
+            <CheckCircle2 className="w-3.5 h-3.5 text-success" />
+            <span className="text-xs font-semibold text-success">Setup Complete</span>
           </div>
         )}
       </div>

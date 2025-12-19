@@ -14,17 +14,24 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <main className="flex-1 flex flex-col min-w-0">
-          <header className="h-12 md:h-14 flex items-center justify-between border-b border-border bg-background px-2 md:px-4 shrink-0 gap-2">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="shrink-0" />
+          {/* Modern Header */}
+          <header className="h-14 flex items-center justify-between border-b border-border/60 bg-background/80 backdrop-blur-xl px-4 shrink-0 sticky top-0 z-40">
+            <div className="flex items-center gap-3">
+              <SidebarTrigger className="shrink-0 h-8 w-8 rounded-lg hover:bg-accent transition-colors" />
+              {/* Optional: Add breadcrumbs or page title here */}
             </div>
-            <div className="flex items-center gap-1 md:gap-2">
+
+            {/* Right side actions */}
+            <div className="flex items-center gap-1.5">
               <GHLSyncStatus />
+              <div className="w-px h-5 bg-border/60 mx-1 hidden sm:block" />
               <ThemeToggle />
               <UserMenu />
             </div>
           </header>
-          <div className="flex-1 overflow-auto bg-background">
+
+          {/* Main content area with subtle gradient */}
+          <div className="flex-1 overflow-auto bg-gradient-to-b from-background via-background to-muted/20">
             {children}
           </div>
         </main>

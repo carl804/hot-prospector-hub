@@ -37,6 +37,7 @@ export function ClientDashboard() {
     return filtered.map((opp: any) => ({
       id: opp.id,
       name: opp.name,
+      contactId: opp.contact?.id || null,
       contactName: opp.contact?.name || 'Unknown',
       contactEmail: opp.contact?.email || '',
       contactPhone: opp.contact?.phone || '',
@@ -194,10 +195,11 @@ export function ClientDashboard() {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {filteredClients.map(client => (
-            <ClientCard 
-              key={client.id} 
-              client={client} 
-              tasks={client.tasks} 
+            <ClientCard
+              key={client.id}
+              client={client}
+              tasks={client.tasks}
+              contactId={(client as any).contactId}
               onClick={() => console.log('Clicked:', client.name)}
             />
           ))}
