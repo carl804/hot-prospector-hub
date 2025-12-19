@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ClientCard } from './ClientCard';
 import { NotesModal } from '@/components/notes/NotesModal';
-import { useGHLOpportunities } from '@/hooks/useGHLOpportunities';
+import { useEnrichedOpportunities } from '@/hooks/useEnrichedOpportunities';
 import { usePipelineTasks } from '@/hooks/useGHLTasks';
 
 type StatusFilter = 'all' | 'active' | 'completed';
@@ -48,7 +48,8 @@ function isFieldTrue(value: any): boolean {
 }
 
 export function ClientDashboard() {
-  const { data: opportunitiesData, isLoading: isLoadingOpps } = useGHLOpportunities({ limit: 100 });
+  // Use enriched opportunities to get full contact data with customFields
+  const { data: opportunitiesData, isLoading: isLoadingOpps } = useEnrichedOpportunities({ limit: 100 });
   const { data: tasksData = [], isLoading: isLoadingTasks } = usePipelineTasks(TARGET_PIPELINE_ID);
   const isLoading = isLoadingOpps || isLoadingTasks;
 
