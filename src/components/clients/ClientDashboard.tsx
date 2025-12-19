@@ -97,11 +97,13 @@ export function ClientDashboard() {
       const customFields = client.contactId ? customFieldsMap.get(client.contactId) : null;
 
       // Helper to get value from the fetched custom fields
+      // GHL custom fields can use either fieldKey or key property
       const getValue = (fieldKey: string) => {
         if (!customFields) return null;
-        const field = customFields.find((f: any) =>
-          f.fieldKey === fieldKey || f.fieldKey?.toLowerCase() === fieldKey.toLowerCase()
-        );
+        const field = customFields.find((f: any) => {
+          const fKey = f.fieldKey || f.key || '';
+          return fKey === fieldKey || fKey.toLowerCase() === fieldKey.toLowerCase();
+        });
         return field?.value ?? null;
       };
 
@@ -109,15 +111,15 @@ export function ClientDashboard() {
       const onboardingValue = getValue(GHL_FIELD_KEYS.onboardingBooked);
       const kickoffValue = getValue(GHL_FIELD_KEYS.kickoffBooked);
 
-      // Debug logging for Micaela
-      if (client.name?.toLowerCase().includes('micaela')) {
-        console.log(`📋 ${client.name} Custom Fields:`, {
-          assessmentValue,
-          onboardingValue,
-          kickoffValue,
-          customFields,
-        });
-      }
+      // Debug logging for all clients
+      console.log(`📋 ${client.name} Custom Fields:`, {
+        contactId: client.contactId,
+        assessmentValue,
+        onboardingValue,
+        kickoffValue,
+        customFieldsCount: customFields?.length || 0,
+        customFields: customFields?.slice(0, 5), // First 5 fields
+      });
 
       return {
         ...client,

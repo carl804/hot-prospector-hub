@@ -284,6 +284,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(response.status).json(responseData);
     }
 
+    // ⭐ FIX: Extract contact object from GHL response
+    // GHL returns {contact: {...}} but we expect just the contact object
+    if (action === 'contacts.get' && responseData.contact) {
+      return res.status(200).json(responseData.contact);
+    }
+
+    // ⭐ FIX: Extract custom fields array from GHL response
+    // GHL returns {customFields: [...]} but we expect just the array
+    if (action === 'customFields.list' && responseData.customFields) {
+      return res.status(200).json(responseData.customFields);
+    }
+
     // ⭐ FIX: Extract tasks array from GHL response
     // GHL returns {tasks: [...], traceId: "..."} but we expect just the array
     if (action === 'tasks.list' && responseData.tasks) {
