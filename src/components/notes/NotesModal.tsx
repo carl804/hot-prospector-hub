@@ -16,7 +16,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -170,9 +169,9 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
       />
 
       {/* Modal */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-card rounded-2xl shadow-2xl overflow-hidden animate-scale-in max-h-[85vh] flex flex-col border border-border/50">
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl bg-card rounded-2xl shadow-2xl overflow-hidden animate-scale-in max-h-[85vh] flex flex-col border border-border/50">
         {/* Header */}
-        <div className="px-6 py-5 border-b border-border/50 shrink-0 bg-gradient-to-b from-secondary/30 to-transparent">
+        <div className="px-7 py-6 border-b border-border/50 shrink-0 bg-gradient-to-b from-secondary/30 to-transparent">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -221,7 +220,7 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
         </div>
 
         {/* Add New Note Section */}
-        <div className="px-6 py-4 border-b border-border/50 bg-secondary/20 shrink-0">
+        <div className="px-7 py-5 border-b border-border/50 bg-secondary/20 shrink-0">
           <Textarea
             value={newNoteBody}
             onChange={(e) => setNewNoteBody(e.target.value)}
@@ -246,7 +245,7 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
 
         {/* Actions Bar */}
         {sortedNotes.length > 0 && (
-          <div className="px-6 py-3 border-b border-border/50 flex items-center justify-between bg-background shrink-0">
+          <div className="px-7 py-4 border-b border-border/50 flex items-center justify-between bg-background shrink-0">
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
@@ -283,7 +282,7 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
 
         {/* Notify CSM Panel */}
         {showNotifyPanel && selectedNoteIds.size > 0 && (
-          <div className="px-5 py-4 border-b border-border bg-primary/5 shrink-0">
+          <div className="px-7 py-5 border-b border-border bg-primary/5 shrink-0">
             <p className="text-sm font-medium text-foreground mb-3">
               Select CSM(s) to notify:
             </p>
@@ -337,8 +336,8 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
         )}
 
         {/* Notes List */}
-        <ScrollArea className="flex-1 min-h-0">
-          <div className="p-5 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+          <div className="p-7 space-y-5">
             {isLoading ? (
               <>
                 {[1, 2, 3].map((i) => (
@@ -361,7 +360,7 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
                 <div
                   key={note.id}
                   className={cn(
-                    'rounded-lg border border-border p-4 transition-all',
+                    'rounded-xl border border-border/60 p-5 transition-all',
                     selectedNoteIds.has(note.id) && 'border-primary bg-primary/5',
                     editingNoteId === note.id && 'border-primary'
                   )}
@@ -410,22 +409,22 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
                             <span className="text-xs text-muted-foreground">
                               {format(new Date(note.dateAdded), 'MMM d, yyyy h:mm a')}
                             </span>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5">
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7"
+                                className="h-8 w-8 rounded-lg hover:bg-secondary"
                                 onClick={() => handleStartEdit(note)}
                               >
-                                <Edit2 className="w-3.5 h-3.5" />
+                                <Edit2 className="w-4 h-4" />
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-7 w-7 text-destructive hover:text-destructive"
+                                className="h-8 w-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
                                 onClick={() => setDeleteConfirmNoteId(note.id)}
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
@@ -440,7 +439,7 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
               ))
             )}
           </div>
-        </ScrollArea>
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}
