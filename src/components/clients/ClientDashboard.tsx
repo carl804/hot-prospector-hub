@@ -14,6 +14,40 @@ type StatusFilter = 'all' | 'active' | 'completed';
 
 const TARGET_PIPELINE_ID = "QNloaHE61P6yedF6jEzk"; // 002. Account Setup
 
+// GHL Custom Field Keys for booking status
+// These are the fieldKey values from GHL custom fields
+const CUSTOM_FIELD_KEYS = {
+  assessmentBooked: 'contact.assessment_call_booked_',
+  assessmentDate: 'contact.assessment_call_booked_date',
+  onboardingBooked: 'contact.onboarding_call_booked_',
+  onboardingDate: 'contact.onboarding_call_booked_date',
+  kickoffBooked: 'contact.kickoff_call_booked_',
+  kickoffDate: 'contact.kick_off_call_booked_date',
+};
+
+// Helper to get custom field value from contact
+function getCustomFieldValue(contact: any, fieldKeyPattern: string): any {
+  if (!contact?.customFields) return null;
+
+  // Find field by partial key match (GHL sometimes adds suffixes)
+  const field = contact.customFields.find((f: any) =>
+    f.fieldKey?.toLowerCase().includes(fieldKeyPattern.toLowerCase()) ||
+    f.id?.toLowerCase().includes(fieldKeyPattern.toLowerCase())
+  );
+
+  return field?.value ?? null;
+}
+
+// Check if a custom field value indicates "Yes" or true
+function isFieldTrue(value: any): boolean {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    const lower = value.toLowerCase().trim();
+    return lower === 'yes' || lower === 'true' || lower === '1';
+  }
+  return false;
+}
+
 export function ClientDashboard() {
   const { data: opportunitiesData, isLoading: isLoadingOpps } = useGHLOpportunities({ limit: 100 });
   const { data: tasksData = [], isLoading: isLoadingTasks } = usePipelineTasks(TARGET_PIPELINE_ID);
@@ -27,28 +61,70 @@ export function ClientDashboard() {
   const clients: Client[] = useMemo(() => {
     console.log('====== CLIENT MAPPING DEBUG ======');
     console.log('1. Raw data:', opportunitiesData);
-    
+
     const allOpps = ((opportunitiesData as any)?.opportunities || []);
     console.log('2. Total fetched:', allOpps.length);
     console.log('3. Pipeline IDs:', [...new Set(allOpps.map((o: any) => o.pipelineId))]);
-    
+
     const filtered = allOpps.filter((opp: any) => opp.pipelineId === TARGET_PIPELINE_ID);
     console.log('4. Filtered count:', filtered.length);
     console.log('5. Names:', filtered.map((o: any) => o.name));
 
-    return filtered.map((opp: any) => ({
-      id: opp.id,
-      name: opp.name,
-      contactId: opp.contact?.id || null,
-      contactName: opp.contact?.name || 'Unknown',
-      contactEmail: opp.contact?.email || '',
-      contactPhone: opp.contact?.phone || '',
-      status: 'active' as const,
-      stage: opp.pipelineStageId || '',
-      setupProgress: 0,
-      lastActivity: opp.updatedAt || new Date().toISOString(),
-      tags: [],
-    }));
+    // Debug: Log custom fields from first contact to help identify field keys
+    if (filtered.length > 0 && filtered[0].contact?.customFields) {
+      console.log('🔧 CUSTOM FIELDS DEBUG (first contact):',
+        filtered[0].contact.customFields.map((f: any) => ({
+          id: f.id,
+          fieldKey: f.fieldKey,
+          value: f.value
+        }))
+      );
+    }
+
+    return filtered.map((opp: any) => {
+      const contact = opp.contact;
+
+      // Extract custom field values for booking status
+      const assessmentValue = getCustomFieldValue(contact, 'assessment_call_booked');
+      const onboardingValue = getCustomFieldValue(contact, 'onboarding_call_booked');
+      const kickoffValue = getCustomFieldValue(contact, 'kickoff_call_booked');
+
+      // Extract dates
+      const assessmentDate = getCustomFieldValue(contact, 'assessment_call_booked_date');
+      const onboardingDate = getCustomFieldValue(contact, 'onboarding_call_booked_date');
+      const kickoffDate = getCustomFieldValue(contact, 'kick_off_call_booked_date');
+
+      // Debug logging for Micaela's contact
+      if (opp.name?.toLowerCase().includes('micaela') || contact?.name?.toLowerCase().includes('micaela')) {
+        console.log(`📋 ${opp.name} Custom Fields:`, {
+          assessmentValue,
+          onboardingValue,
+          kickoffValue,
+          allCustomFields: contact?.customFields
+        });
+      }
+
+      return {
+        id: opp.id,
+        name: opp.name,
+        contactId: contact?.id || null,
+        contactName: contact?.name || 'Unknown',
+        contactEmail: contact?.email || '',
+        contactPhone: contact?.phone || '',
+        status: 'active' as const,
+        stage: opp.pipelineStageId || '',
+        setupProgress: 0,
+        lastActivity: opp.updatedAt || new Date().toISOString(),
+        tags: [],
+        // Map custom field values to boolean flags
+        assessmentBooked: isFieldTrue(assessmentValue),
+        assessmentDate: assessmentDate || undefined,
+        onboardingBooked: isFieldTrue(onboardingValue),
+        onboardingDate: onboardingDate || undefined,
+        kickoffBooked: isFieldTrue(kickoffValue),
+        kickoffDate: kickoffDate || undefined,
+      };
+    });
   }, [opportunitiesData]);
 
   const clientsWithTasks = useMemo(() => {

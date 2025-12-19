@@ -33,17 +33,19 @@ export interface Client {
   contactName: string;
   contactEmail: string;
   contactPhone: string;
-  startDate: string;
+  startDate?: string;
   status: 'active' | 'completed' | 'on_hold';
-  pipelineStage: PipelineStage;
-  assignedCsmId: string;
-  assessmentBooked: boolean;
+  pipelineStage?: PipelineStage;
+  assignedCsmId?: string;
+  assessmentBooked?: boolean;
   assessmentDate?: string;
-  onboardingBooked: boolean;
+  onboardingBooked?: boolean;
   onboardingDate?: string;
-  draftBuildNotified: boolean;
-  setupCompleteNotified: boolean;
-  intakeForm: IntakeFormData;
+  kickoffBooked?: boolean;
+  kickoffDate?: string;
+  draftBuildNotified?: boolean;
+  setupCompleteNotified?: boolean;
+  intakeForm?: IntakeFormData;
 }
 
 export interface IntakeFormData {

@@ -135,6 +135,16 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
           {!client.onboardingBooked && <Calendar className="w-3 h-3 opacity-50" />}
           Onboarding
         </span>
+        <span className={cn(
+          'inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-lg transition-colors',
+          client.kickoffBooked
+            ? 'bg-success/10 text-success'
+            : 'bg-muted/80 text-muted-foreground'
+        )}>
+          {client.kickoffBooked && <CheckCircle2 className="w-3 h-3" />}
+          {!client.kickoffBooked && <Calendar className="w-3 h-3 opacity-50" />}
+          Kickoff
+        </span>
       </div>
 
       {/* Progress Section - Refined */}
