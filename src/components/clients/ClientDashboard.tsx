@@ -14,25 +14,24 @@ type StatusFilter = 'all' | 'active' | 'completed';
 
 const TARGET_PIPELINE_ID = "QNloaHE61P6yedF6jEzk"; // 002. Account Setup
 
-// GHL Custom Field Keys for booking status
-// These are the fieldKey values from GHL custom fields
-const CUSTOM_FIELD_KEYS = {
-  assessmentBooked: 'contact.assessment_call_booked_',
+// GHL Custom Field Keys for booking status (exact fieldKey values from GHL)
+const GHL_FIELD_KEYS = {
+  assessmentBooked: 'contact.assessment_call_booked',
   assessmentDate: 'contact.assessment_call_booked_date',
-  onboardingBooked: 'contact.onboarding_call_booked_',
+  onboardingBooked: 'contact.onboarding_call_booked',
   onboardingDate: 'contact.onboarding_call_booked_date',
-  kickoffBooked: 'contact.kickoff_call_booked_',
+  kickoffBooked: 'contact.kickoff_call_booked',
   kickoffDate: 'contact.kick_off_call_booked_date',
 };
 
-// Helper to get custom field value from contact
-function getCustomFieldValue(contact: any, fieldKeyPattern: string): any {
+// Helper to get custom field value from contact by exact fieldKey
+function getCustomFieldValue(contact: any, fieldKey: string): any {
   if (!contact?.customFields) return null;
 
-  // Find field by partial key match (GHL sometimes adds suffixes)
+  // Find field by exact fieldKey match first, then try partial match as fallback
   const field = contact.customFields.find((f: any) =>
-    f.fieldKey?.toLowerCase().includes(fieldKeyPattern.toLowerCase()) ||
-    f.id?.toLowerCase().includes(fieldKeyPattern.toLowerCase())
+    f.fieldKey === fieldKey ||
+    f.fieldKey?.toLowerCase() === fieldKey.toLowerCase()
   );
 
   return field?.value ?? null;
@@ -84,15 +83,15 @@ export function ClientDashboard() {
     return filtered.map((opp: any) => {
       const contact = opp.contact;
 
-      // Extract custom field values for booking status
-      const assessmentValue = getCustomFieldValue(contact, 'assessment_call_booked');
-      const onboardingValue = getCustomFieldValue(contact, 'onboarding_call_booked');
-      const kickoffValue = getCustomFieldValue(contact, 'kickoff_call_booked');
+      // Extract custom field values for booking status using exact GHL field keys
+      const assessmentValue = getCustomFieldValue(contact, GHL_FIELD_KEYS.assessmentBooked);
+      const onboardingValue = getCustomFieldValue(contact, GHL_FIELD_KEYS.onboardingBooked);
+      const kickoffValue = getCustomFieldValue(contact, GHL_FIELD_KEYS.kickoffBooked);
 
       // Extract dates
-      const assessmentDate = getCustomFieldValue(contact, 'assessment_call_booked_date');
-      const onboardingDate = getCustomFieldValue(contact, 'onboarding_call_booked_date');
-      const kickoffDate = getCustomFieldValue(contact, 'kick_off_call_booked_date');
+      const assessmentDate = getCustomFieldValue(contact, GHL_FIELD_KEYS.assessmentDate);
+      const onboardingDate = getCustomFieldValue(contact, GHL_FIELD_KEYS.onboardingDate);
+      const kickoffDate = getCustomFieldValue(contact, GHL_FIELD_KEYS.kickoffDate);
 
       // Debug logging for Micaela's contact
       if (opp.name?.toLowerCase().includes('micaela') || contact?.name?.toLowerCase().includes('micaela')) {
