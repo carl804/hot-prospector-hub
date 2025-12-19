@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Plus, Building2, Clock, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Building2, Clock, AlertTriangle, Users, Activity } from 'lucide-react';
 import { Client, CSM_LIST } from '@/types/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -122,62 +122,92 @@ export function ClientDashboard() {
   }
 
   return (
-    <div className="p-8 space-y-6">
+    <div className="p-6 lg:p-8 space-y-8">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Clients</h1>
-          <p className="text-muted-foreground">Manage your client accounts</p>
+          <h1 className="text-2xl font-bold tracking-tight">Clients</h1>
+          <p className="text-muted-foreground text-sm mt-1">Manage your client accounts</p>
         </div>
-        <Button><Plus className="mr-2 h-4 w-4" />New Client</Button>
+        <Button className="shadow-sm">
+          <Plus className="mr-2 h-4 w-4" />
+          New Client
+        </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <div className="rounded-lg border bg-card p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">Total Clients</p>
+      {/* Premium Stats Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Total Clients */}
+        <div className="group relative bg-card rounded-2xl border border-border/40 p-5 transition-all duration-200 hover:border-border/60 hover:shadow-md">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Users className="w-5 h-5 text-primary" />
+            </div>
+            <span className="text-xs font-medium text-muted-foreground px-2 py-1 bg-secondary/80 rounded-md">
+              Total
+            </span>
           </div>
-          <p className="text-3xl font-bold">{stats.total}</p>
+          <p className="text-3xl font-bold tracking-tight tabular-nums">{stats.total}</p>
+          <p className="text-sm text-muted-foreground mt-1">Clients</p>
         </div>
 
-        <div className="rounded-lg border bg-card p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Clock className="h-4 w-4 text-blue-500" />
-            <p className="text-sm text-muted-foreground">Active</p>
+        {/* Active */}
+        <div className="group relative bg-card rounded-2xl border border-border/40 p-5 transition-all duration-200 hover:border-border/60 hover:shadow-md">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
+              <Activity className="w-5 h-5 text-success" />
+            </div>
+            <span className="text-xs font-medium text-success px-2 py-1 bg-success/10 rounded-md">
+              Active
+            </span>
           </div>
-          <p className="text-3xl font-bold text-blue-500">{stats.active}</p>
+          <p className="text-3xl font-bold tracking-tight tabular-nums text-success">{stats.active}</p>
+          <p className="text-sm text-muted-foreground mt-1">In progress</p>
         </div>
 
-        <div className="rounded-lg border bg-card p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <AlertTriangle className="h-4 w-4 text-orange-500" />
-            <p className="text-sm text-muted-foreground">At Risk</p>
+        {/* At Risk */}
+        <div className="group relative bg-card rounded-2xl border border-border/40 p-5 transition-all duration-200 hover:border-border/60 hover:shadow-md">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+            </div>
+            <span className="text-xs font-medium text-destructive px-2 py-1 bg-destructive/10 rounded-md">
+              Risk
+            </span>
           </div>
-          <p className="text-3xl font-bold text-orange-500">{stats.atRisk}</p>
+          <p className="text-3xl font-bold tracking-tight tabular-nums text-destructive">{stats.atRisk}</p>
+          <p className="text-sm text-muted-foreground mt-1">Need attention</p>
         </div>
 
-        <div className="rounded-lg border bg-card p-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Clock className="h-4 w-4 text-purple-500" />
-            <p className="text-sm text-muted-foreground">Due Today</p>
+        {/* Due Today */}
+        <div className="group relative bg-card rounded-2xl border border-border/40 p-5 transition-all duration-200 hover:border-border/60 hover:shadow-md">
+          <div className="flex items-center justify-between mb-3">
+            <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-warning" />
+            </div>
+            <span className="text-xs font-medium text-warning px-2 py-1 bg-warning/10 rounded-md">
+              Today
+            </span>
           </div>
-          <p className="text-3xl font-bold text-purple-500">{stats.dueToday}</p>
+          <p className="text-3xl font-bold tracking-tight tabular-nums text-warning">{stats.dueToday}</p>
+          <p className="text-sm text-muted-foreground mt-1">Due today</p>
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4">
+      {/* Search & Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search clients..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-10 h-11 bg-secondary/50 border-transparent focus:bg-background focus:border-border transition-colors"
           />
         </div>
-        
+
         <Select value={statusFilter} onValueChange={(value: StatusFilter) => setStatusFilter(value)}>
-          <SelectTrigger className="w-full sm:w-[180px]">
+          <SelectTrigger className="w-full sm:w-[160px] h-11 bg-secondary/50 border-transparent">
             <SelectValue placeholder="Filter by status" />
           </SelectTrigger>
           <SelectContent>
@@ -189,13 +219,17 @@ export function ClientDashboard() {
       </div>
 
       {filteredClients.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center">
-          <Building2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
-          <h3 className="mt-4 text-lg font-semibold">No clients found</h3>
-          <p className="text-sm text-muted-foreground">Check console for debug info</p>
+        <div className="rounded-2xl border border-dashed border-border/60 p-16 text-center bg-secondary/20">
+          <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mx-auto mb-4">
+            <Building2 className="w-8 h-8 text-muted-foreground/50" />
+          </div>
+          <h3 className="text-lg font-semibold tracking-tight">No clients found</h3>
+          <p className="text-sm text-muted-foreground mt-1 max-w-sm mx-auto">
+            Try adjusting your search or filters to find what you're looking for.
+          </p>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredClients.map(client => (
             <ClientCard
               key={client.id}

@@ -1,4 +1,4 @@
-import { Building2, CheckCircle2, Clock, AlertTriangle, ChevronRight, Calendar, GitBranch } from 'lucide-react';
+import { Building2, CheckCircle2, Clock, AlertTriangle, ChevronRight, Calendar, Layers } from 'lucide-react';
 import { Client, CSM_LIST, PIPELINE_STAGES } from '@/types/client';
 import { Task } from '@/types/task';
 import { cn } from '@/lib/utils';
@@ -36,131 +36,152 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
     <div
       onClick={onClick}
       className={cn(
-        'group bg-card rounded-xl border border-border/50 p-5 cursor-pointer',
-        'transition-all duration-200 hover:shadow-card-hover hover:border-primary/20 hover:-translate-y-0.5',
+        'group relative bg-card rounded-2xl border border-border/40 p-5',
+        'cursor-pointer transition-all duration-200 ease-out',
+        'hover:border-border/80 hover:-translate-y-0.5',
+        'shadow-[0_1px_3px_0_rgb(0_0_0/0.02),0_1px_2px_-1px_rgb(0_0_0/0.02)]',
+        'hover:shadow-[0_8px_16px_-4px_rgb(0_0_0/0.08),0_4px_8px_-4px_rgb(0_0_0/0.04)]',
+        'dark:shadow-[0_1px_3px_0_rgb(0_0_0/0.2)]',
+        'dark:hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.4)]',
         isComplete && 'opacity-70'
       )}
     >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className={cn(
-            'w-11 h-11 rounded-xl flex items-center justify-center shadow-sm',
-            isComplete
-              ? 'bg-gradient-to-br from-success/20 to-success/10'
-              : 'bg-gradient-to-br from-primary/20 to-primary/10'
-          )}>
-            {isComplete ? (
-              <CheckCircle2 className="w-5 h-5 text-success" />
-            ) : (
-              <Building2 className="w-5 h-5 text-primary" />
-            )}
-          </div>
-          <div>
-            <h3 className="font-semibold text-foreground text-sm leading-tight">
-              {client.name}
-            </h3>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              {client.contactName}
-            </p>
-          </div>
+      {/* Top Row: Icon + Name + Actions */}
+      <div className="flex items-start gap-3.5 mb-4">
+        {/* Client Icon */}
+        <div className={cn(
+          'relative flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center',
+          'transition-all duration-200',
+          isComplete
+            ? 'bg-success/10'
+            : 'bg-gradient-to-br from-primary/10 to-primary/5 group-hover:from-primary/15 group-hover:to-primary/10'
+        )}>
+          {isComplete ? (
+            <CheckCircle2 className="w-5 h-5 text-success" />
+          ) : (
+            <Building2 className="w-5 h-5 text-primary" />
+          )}
         </div>
-        <div className="flex items-center gap-1">
+
+        {/* Name & Contact */}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-foreground text-[15px] leading-tight truncate tracking-tight">
+            {client.name}
+          </h3>
+          <p className="text-[13px] text-muted-foreground mt-0.5 truncate">
+            {client.contactName}
+          </p>
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-0.5 -mr-1">
           {client.contactId && (
             <NotesIndicator
               contactId={client.contactId}
               onClick={onNotesClick}
             />
           )}
-          <ChevronRight className="w-4 h-4 text-muted-foreground/50 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5" />
+          <div className="w-6 h-6 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+          </div>
         </div>
       </div>
 
       {/* CSM Badge */}
       {csm && (
-        <div className="flex items-center gap-2.5 mb-4">
+        <div className="flex items-center gap-2 mb-4">
           <div className={cn(
-            'w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-semibold text-primary-foreground shadow-sm',
+            'w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold text-white',
+            'shadow-sm',
             csm.color
           )}>
             {csm.initials}
           </div>
-          <span className="text-xs text-muted-foreground">{csm.name}</span>
+          <span className="text-[13px] text-muted-foreground">{csm.name}</span>
         </div>
       )}
 
-      {/* Pipeline Stage & Booking Status Row */}
-      <div className="flex items-center gap-2 mb-4 flex-wrap">
+      {/* Tags Row - Cleaner, more minimal */}
+      <div className="flex items-center gap-1.5 mb-4 flex-wrap">
         {/* Pipeline Stage */}
         {stage && (
-          <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-primary/10 text-primary border border-primary/20">
-            <GitBranch className="w-3 h-3" />
+          <span className={cn(
+            'inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg',
+            'bg-primary/8 text-primary'
+          )}>
+            <Layers className="w-3 h-3 opacity-70" />
             {stage.label}
           </span>
         )}
 
-        {/* Booking Status */}
-        <div className={cn(
-          'flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-full border',
+        {/* Booking Status - Minimal pills */}
+        <span className={cn(
+          'inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-lg transition-colors',
           client.assessmentBooked
-            ? 'bg-success/10 text-success border-success/20'
-            : 'bg-muted text-muted-foreground/60 border-border'
+            ? 'bg-success/10 text-success'
+            : 'bg-muted/80 text-muted-foreground'
         )}>
-          {client.assessmentBooked ? <CheckCircle2 className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
-          <span>Assessment</span>
-        </div>
-        <div className={cn(
-          'flex items-center gap-1.5 text-[10px] font-medium px-2.5 py-1 rounded-full border',
+          {client.assessmentBooked && <CheckCircle2 className="w-3 h-3" />}
+          {!client.assessmentBooked && <Calendar className="w-3 h-3 opacity-50" />}
+          Assessment
+        </span>
+        <span className={cn(
+          'inline-flex items-center gap-1 text-[11px] font-medium px-2 py-1 rounded-lg transition-colors',
           client.onboardingBooked
-            ? 'bg-success/10 text-success border-success/20'
-            : 'bg-muted text-muted-foreground/60 border-border'
+            ? 'bg-success/10 text-success'
+            : 'bg-muted/80 text-muted-foreground'
         )}>
-          {client.onboardingBooked ? <CheckCircle2 className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
-          <span>Onboarding</span>
-        </div>
+          {client.onboardingBooked && <CheckCircle2 className="w-3 h-3" />}
+          {!client.onboardingBooked && <Calendar className="w-3 h-3 opacity-50" />}
+          Onboarding
+        </span>
       </div>
 
-      {/* Progress Bar */}
+      {/* Progress Section - Refined */}
       <div className="mb-4">
-        <div className="flex items-center justify-between text-xs mb-2">
-          <span className="text-muted-foreground">Progress</span>
-          <span className="font-semibold text-foreground">{completedTasks}/{totalTasks} tasks</span>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[12px] font-medium text-muted-foreground tracking-wide uppercase">Progress</span>
+          <span className="text-[13px] font-semibold text-foreground tabular-nums">
+            {completedTasks}/{totalTasks}
+          </span>
         </div>
-        <div className="h-2 bg-secondary rounded-full overflow-hidden">
+        <div className="h-1.5 bg-secondary/80 rounded-full overflow-hidden">
           <div
             className={cn(
-              'h-full rounded-full transition-all duration-500',
-              isComplete ? 'bg-success' : 'bg-primary'
+              'h-full rounded-full transition-all duration-500 ease-out',
+              isComplete
+                ? 'bg-gradient-to-r from-success to-success/80'
+                : 'bg-gradient-to-r from-primary to-primary/80'
             )}
             style={{ width: `${progress}%` }}
           />
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="flex items-center gap-4">
+      {/* Status Row - Cleaner badges */}
+      <div className="flex items-center gap-2 flex-wrap">
         {overdueTasks > 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-destructive/10">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-destructive/10">
             <AlertTriangle className="w-3.5 h-3.5 text-destructive" />
-            <span className="text-xs font-semibold text-destructive">{overdueTasks} overdue</span>
+            <span className="text-[11px] font-semibold text-destructive">{overdueTasks} overdue</span>
           </div>
         )}
         {dueTodayTasks > 0 && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10">
-            <Clock className="w-3.5 h-3.5 text-primary" />
-            <span className="text-xs font-semibold text-primary">{dueTodayTasks} due today</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-warning/10">
+            <Clock className="w-3.5 h-3.5 text-warning" />
+            <span className="text-[11px] font-semibold text-warning">{dueTodayTasks} today</span>
           </div>
         )}
-        {overdueTasks === 0 && dueTodayTasks === 0 && !isComplete && (
+        {overdueTasks === 0 && dueTodayTasks === 0 && !isComplete && totalTasks > completedTasks && (
           <div className="flex items-center gap-1.5 text-muted-foreground">
-            <Clock className="w-3.5 h-3.5" />
-            <span className="text-xs">{totalTasks - completedTasks} remaining</span>
+            <Clock className="w-3.5 h-3.5 opacity-60" />
+            <span className="text-[11px] font-medium">{totalTasks - completedTasks} remaining</span>
           </div>
         )}
         {isComplete && (
-          <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-success/10">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-success/10">
             <CheckCircle2 className="w-3.5 h-3.5 text-success" />
-            <span className="text-xs font-semibold text-success">Setup Complete</span>
+            <span className="text-[11px] font-semibold text-success">Complete</span>
           </div>
         )}
       </div>

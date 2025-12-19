@@ -165,67 +165,74 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
     <div className="fixed inset-0 z-[100] animate-fade-in">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-foreground/30 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
 
       {/* Modal */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-card rounded-xl shadow-2xl overflow-hidden animate-scale-in max-h-[85vh] flex flex-col">
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-card rounded-2xl shadow-2xl overflow-hidden animate-scale-in max-h-[85vh] flex flex-col border border-border/50">
         {/* Header */}
-        <div className="px-5 py-4 border-b border-border shrink-0">
-          <div className="flex items-center justify-between mb-3">
+        <div className="px-6 py-5 border-b border-border/50 shrink-0 bg-gradient-to-b from-secondary/30 to-transparent">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <MessageSquare className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-foreground">Notes</h2>
-                <p className="text-xs text-muted-foreground">{clientName}</p>
+                <h2 className="text-lg font-semibold text-foreground tracking-tight">Notes</h2>
+                <p className="text-sm text-muted-foreground">{clientName}</p>
               </div>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="rounded-xl hover:bg-secondary"
+            >
               <X className="w-5 h-5" />
             </Button>
           </div>
 
           {/* Task Progress Bar */}
           {totalTasks > 0 && (
-            <div className="flex items-center gap-3 mt-3 pt-3 border-t border-border/50">
+            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border/40">
               <div className="flex-1">
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-muted-foreground">Task Progress</span>
-                  <span className="font-medium text-foreground">{progressPercent}%</span>
+                <div className="flex items-center justify-between text-xs mb-2">
+                  <span className="text-muted-foreground font-medium uppercase tracking-wide">Progress</span>
+                  <span className="font-semibold text-foreground tabular-nums">{progressPercent}%</span>
                 </div>
-                <div className="h-2 bg-secondary rounded-full overflow-hidden">
+                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
                   <div
                     className={cn(
-                      'h-full rounded-full transition-all duration-500',
-                      progressPercent === 100 ? 'bg-success' : 'bg-primary'
+                      'h-full rounded-full transition-all duration-500 ease-out',
+                      progressPercent === 100
+                        ? 'bg-gradient-to-r from-success to-success/80'
+                        : 'bg-gradient-to-r from-primary to-primary/80'
                     )}
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
               </div>
-              <span className="text-xs text-muted-foreground whitespace-nowrap">
-                {completedTasks}/{totalTasks} tasks
+              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap tabular-nums">
+                {completedTasks}/{totalTasks}
               </span>
             </div>
           )}
         </div>
 
         {/* Add New Note Section */}
-        <div className="px-5 py-4 border-b border-border bg-secondary/30 shrink-0">
+        <div className="px-6 py-4 border-b border-border/50 bg-secondary/20 shrink-0">
           <Textarea
             value={newNoteBody}
             onChange={(e) => setNewNoteBody(e.target.value)}
-            placeholder="Add a new note..."
-            className="bg-background min-h-[80px] resize-none"
+            placeholder="Write a note..."
+            className="bg-background border-border/50 min-h-[80px] resize-none rounded-xl focus:border-primary/50 transition-colors"
           />
           <div className="flex justify-end mt-3">
             <Button
               onClick={handleAddNote}
               disabled={!newNoteBody.trim() || createNoteMutation.isPending}
-              className="gap-2"
+              className="gap-2 rounded-xl shadow-sm"
             >
               {createNoteMutation.isPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -239,23 +246,23 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
 
         {/* Actions Bar */}
         {sortedNotes.length > 0 && (
-          <div className="px-5 py-3 border-b border-border flex items-center justify-between bg-background shrink-0">
+          <div className="px-6 py-3 border-b border-border/50 flex items-center justify-between bg-background shrink-0">
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={selectAllNotes}
-                className="gap-2 text-xs"
+                className="gap-2 text-xs rounded-lg h-8"
               >
                 {selectedNoteIds.size === sortedNotes.length ? (
-                  <CheckSquare className="w-4 h-4" />
+                  <CheckSquare className="w-3.5 h-3.5" />
                 ) : (
-                  <Square className="w-4 h-4" />
+                  <Square className="w-3.5 h-3.5" />
                 )}
-                {selectedNoteIds.size === sortedNotes.length ? 'Deselect All' : 'Select All'}
+                {selectedNoteIds.size === sortedNotes.length ? 'Deselect' : 'Select All'}
               </Button>
               {selectedNoteIds.size > 0 && (
-                <span className="text-xs text-muted-foreground">
+                <span className="text-xs text-muted-foreground font-medium px-2 py-1 bg-secondary rounded-md">
                   {selectedNoteIds.size} selected
                 </span>
               )}
@@ -266,9 +273,9 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
               size="sm"
               onClick={() => setShowNotifyPanel(!showNotifyPanel)}
               disabled={selectedNoteIds.size === 0}
-              className="gap-2"
+              className="gap-2 rounded-lg h-8"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-3.5 h-3.5" />
               Notify CSM
             </Button>
           </div>
