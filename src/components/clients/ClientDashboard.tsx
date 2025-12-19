@@ -9,6 +9,7 @@ import { ClientCard } from './ClientCard';
 import { NotesModal } from '@/components/notes/NotesModal';
 import { useGHLOpportunities } from '@/hooks/useGHLOpportunities';
 import { usePipelineTasks } from '@/hooks/useGHLTasks';
+import { useContactCustomFields } from '@/hooks/useContactCustomFields';
 
 type StatusFilter = 'all' | 'active' | 'completed';
 
@@ -50,63 +51,27 @@ function isFieldTrue(value: any): boolean {
 export function ClientDashboard() {
   const { data: opportunitiesData, isLoading: isLoadingOpps } = useGHLOpportunities({ limit: 100 });
   const { data: tasksData = [], isLoading: isLoadingTasks } = usePipelineTasks(TARGET_PIPELINE_ID);
-  const isLoading = isLoadingOpps || isLoadingTasks;
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [csmFilter, setCsmFilter] = useState('all');
   const [notesClient, setNotesClient] = useState<{ contactId: string; name: string; tasks: any[] } | null>(null);
 
-  const clients: Client[] = useMemo(() => {
-    console.log('====== CLIENT MAPPING DEBUG ======');
-    console.log('1. Raw data:', opportunitiesData);
-
+  // First pass: extract basic client data and contact IDs
+  const { basicClients, contactIds } = useMemo(() => {
     const allOpps = ((opportunitiesData as any)?.opportunities || []);
-    console.log('2. Total fetched:', allOpps.length);
-    console.log('3. Pipeline IDs:', [...new Set(allOpps.map((o: any) => o.pipelineId))]);
-
     const filtered = allOpps.filter((opp: any) => opp.pipelineId === TARGET_PIPELINE_ID);
-    console.log('4. Filtered count:', filtered.length);
-    console.log('5. Names:', filtered.map((o: any) => o.name));
 
-    // Debug: Log custom fields from first contact to help identify field keys
-    if (filtered.length > 0 && filtered[0].contact?.customFields) {
-      console.log('🔧 CUSTOM FIELDS DEBUG (first contact):',
-        filtered[0].contact.customFields.map((f: any) => ({
-          id: f.id,
-          fieldKey: f.fieldKey,
-          value: f.value
-        }))
-      );
-    }
-
-    return filtered.map((opp: any) => {
+    const ids: string[] = [];
+    const clients = filtered.map((opp: any) => {
       const contact = opp.contact;
-
-      // Extract custom field values for booking status using exact GHL field keys
-      const assessmentValue = getCustomFieldValue(contact, GHL_FIELD_KEYS.assessmentBooked);
-      const onboardingValue = getCustomFieldValue(contact, GHL_FIELD_KEYS.onboardingBooked);
-      const kickoffValue = getCustomFieldValue(contact, GHL_FIELD_KEYS.kickoffBooked);
-
-      // Extract dates
-      const assessmentDate = getCustomFieldValue(contact, GHL_FIELD_KEYS.assessmentDate);
-      const onboardingDate = getCustomFieldValue(contact, GHL_FIELD_KEYS.onboardingDate);
-      const kickoffDate = getCustomFieldValue(contact, GHL_FIELD_KEYS.kickoffDate);
-
-      // Debug logging for Micaela's contact
-      if (opp.name?.toLowerCase().includes('micaela') || contact?.name?.toLowerCase().includes('micaela')) {
-        console.log(`📋 ${opp.name} Custom Fields:`, {
-          assessmentValue,
-          onboardingValue,
-          kickoffValue,
-          allCustomFields: contact?.customFields
-        });
-      }
+      const contactId = contact?.id || opp.contactId || null;
+      if (contactId) ids.push(contactId);
 
       return {
         id: opp.id,
         name: opp.name,
-        contactId: contact?.id || null,
+        contactId,
         contactName: contact?.name || 'Unknown',
         contactEmail: contact?.email || '',
         contactPhone: contact?.phone || '',
@@ -115,16 +80,56 @@ export function ClientDashboard() {
         setupProgress: 0,
         lastActivity: opp.updatedAt || new Date().toISOString(),
         tags: [],
-        // Map custom field values to boolean flags
-        assessmentBooked: isFieldTrue(assessmentValue),
-        assessmentDate: assessmentDate || undefined,
-        onboardingBooked: isFieldTrue(onboardingValue),
-        onboardingDate: onboardingDate || undefined,
-        kickoffBooked: isFieldTrue(kickoffValue),
-        kickoffDate: kickoffDate || undefined,
       };
     });
+
+    return { basicClients: clients, contactIds: ids };
   }, [opportunitiesData]);
+
+  // Fetch custom fields for all contacts (separate API calls)
+  const { customFieldsMap, isLoading: isLoadingCustomFields } = useContactCustomFields(contactIds);
+
+  const isLoading = isLoadingOpps || isLoadingTasks;
+
+  // Merge custom fields into clients
+  const clients: Client[] = useMemo(() => {
+    return basicClients.map((client) => {
+      const customFields = client.contactId ? customFieldsMap.get(client.contactId) : null;
+
+      // Helper to get value from the fetched custom fields
+      const getValue = (fieldKey: string) => {
+        if (!customFields) return null;
+        const field = customFields.find((f: any) =>
+          f.fieldKey === fieldKey || f.fieldKey?.toLowerCase() === fieldKey.toLowerCase()
+        );
+        return field?.value ?? null;
+      };
+
+      const assessmentValue = getValue(GHL_FIELD_KEYS.assessmentBooked);
+      const onboardingValue = getValue(GHL_FIELD_KEYS.onboardingBooked);
+      const kickoffValue = getValue(GHL_FIELD_KEYS.kickoffBooked);
+
+      // Debug logging for Micaela
+      if (client.name?.toLowerCase().includes('micaela')) {
+        console.log(`📋 ${client.name} Custom Fields:`, {
+          assessmentValue,
+          onboardingValue,
+          kickoffValue,
+          customFields,
+        });
+      }
+
+      return {
+        ...client,
+        assessmentBooked: isFieldTrue(assessmentValue),
+        assessmentDate: getValue(GHL_FIELD_KEYS.assessmentDate) || undefined,
+        onboardingBooked: isFieldTrue(onboardingValue),
+        onboardingDate: getValue(GHL_FIELD_KEYS.onboardingDate) || undefined,
+        kickoffBooked: isFieldTrue(kickoffValue),
+        kickoffDate: getValue(GHL_FIELD_KEYS.kickoffDate) || undefined,
+      };
+    });
+  }, [basicClients, customFieldsMap]);
 
   const clientsWithTasks = useMemo(() => {
     console.log('====== TASKS MAPPING DEBUG ======');
