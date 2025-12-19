@@ -21,7 +21,7 @@ const GHL_FIELD_KEYS = {
   onboardingBooked: 'contact.onboarding_call_booked',
   onboardingDate: 'contact.onboarding_call_booked_date',
   kickoffBooked: 'contact.kickoff_call_booked',
-  kickoffDate: 'contact.kick_off_call_booked_date',
+  kickoffDate: 'contact.kickoff_call_booked_date',
 };
 
 // Helper to get custom field value from contact by exact fieldKey
