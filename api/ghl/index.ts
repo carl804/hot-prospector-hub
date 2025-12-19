@@ -5,11 +5,12 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 const GHL_API_BASE = 'https://services.leadconnectorhq.com';
 
-type GHLAction = 
-  | 'contacts.list' | 'contacts.get' | 'contacts.create' | 'contacts.update' | 'contacts.delete'
+type GHLAction =
+  | 'contacts.list' | 'contacts.get' | 'contacts.create' | 'contacts.update' | 'contacts.delete' | 'contacts.addTag'
   | 'opportunities.list' | 'opportunities.get' | 'opportunities.create' | 'opportunities.update' | 'opportunities.delete' | 'opportunities.updateStatus'
   | 'pipelines.list' | 'pipelines.get'
   | 'tasks.list' | 'tasks.get' | 'tasks.create' | 'tasks.update' | 'tasks.delete' | 'tasks.complete'
+  | 'notes.list' | 'notes.get' | 'notes.create' | 'notes.update' | 'notes.delete'
   | 'tags.list' | 'tags.get' | 'tags.create' | 'tags.update' | 'tags.delete'
   | 'customFields.list' | 'customFields.get' | 'customFields.create' | 'customFields.update' | 'customFields.delete'
   | 'customValues.list' | 'customValues.get' | 'customValues.create' | 'customValues.update' | 'customValues.delete'
@@ -22,6 +23,7 @@ interface GHLRequest {
   id?: string;
   contactId?: string;
   taskId?: string;
+  noteId?: string;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -56,7 +58,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   };
 
   try {
-    const { action, params, data, id, contactId, taskId } = req.body as GHLRequest;
+    const { action, params, data, id, contactId, taskId, noteId } = req.body as GHLRequest;
 
     let endpoint = '';
     let method = 'GET';
@@ -90,6 +92,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'contacts.delete':
         endpoint = `/contacts/${id}`;
         method = 'DELETE';
+        break;
+      case 'contacts.addTag':
+        endpoint = `/contacts/${contactId}/tags`;
+        method = 'POST';
+        body = JSON.stringify(data);
         break;
 
       // ============ OPPORTUNITIES ============
@@ -160,6 +167,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         endpoint = `/contacts/${contactId}/tasks/${taskId}/completed`;
         method = 'PUT';
         body = JSON.stringify(data);
+        break;
+
+      // ============ NOTES ============
+      case 'notes.list':
+        endpoint = `/contacts/${contactId}/notes`;
+        break;
+      case 'notes.get':
+        endpoint = `/contacts/${contactId}/notes/${noteId}`;
+        break;
+      case 'notes.create':
+        endpoint = `/contacts/${contactId}/notes`;
+        method = 'POST';
+        body = JSON.stringify(data);
+        break;
+      case 'notes.update':
+        endpoint = `/contacts/${contactId}/notes/${noteId}`;
+        method = 'PUT';
+        body = JSON.stringify(data);
+        break;
+      case 'notes.delete':
+        endpoint = `/contacts/${contactId}/notes/${noteId}`;
+        method = 'DELETE';
         break;
 
       // ============ TAGS ============
@@ -259,6 +288,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // GHL returns {tasks: [...], traceId: "..."} but we expect just the array
     if (action === 'tasks.list' && responseData.tasks) {
       return res.status(200).json(responseData.tasks);
+    }
+
+    // ⭐ FIX: Extract notes array from GHL response
+    // GHL returns {notes: [...], traceId: "..."} but we expect just the array
+    if (action === 'notes.list' && responseData.notes) {
+      return res.status(200).json(responseData.notes);
     }
 
     return res.status(200).json(responseData);

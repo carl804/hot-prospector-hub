@@ -213,3 +213,21 @@ export interface GHLApiError {
   message: string;
   error?: string;
 }
+
+// Contact Notes
+export interface GHLNote {
+  id: string;
+  body: string;
+  userId?: string;
+  dateAdded: string;
+  contactId: string;
+}
+
+export interface GHLNoteCreate {
+  body: string;
+  userId?: string;
+}
+
+export interface GHLNoteUpdate {
+  body: string;
+}

@@ -12,6 +12,9 @@ import type {
   GHLTask,
   GHLTaskCreate,
   GHLTaskUpdate,
+  GHLNote,
+  GHLNoteCreate,
+  GHLNoteUpdate,
   GHLTag,
   GHLTagCreate,
   GHLCustomField,
@@ -22,11 +25,12 @@ import type {
   GHLPaginatedResponse,
 } from '@/types/ghl';
 
-type GHLAction = 
-  | 'contacts.list' | 'contacts.get' | 'contacts.create' | 'contacts.update' | 'contacts.delete'
+type GHLAction =
+  | 'contacts.list' | 'contacts.get' | 'contacts.create' | 'contacts.update' | 'contacts.delete' | 'contacts.addTag'
   | 'opportunities.list' | 'opportunities.get' | 'opportunities.create' | 'opportunities.update' | 'opportunities.delete' | 'opportunities.updateStatus'
   | 'pipelines.list' | 'pipelines.get'
   | 'tasks.list' | 'tasks.get' | 'tasks.create' | 'tasks.update' | 'tasks.delete' | 'tasks.complete'
+  | 'notes.list' | 'notes.get' | 'notes.create' | 'notes.update' | 'notes.delete'
   | 'tags.list' | 'tags.get' | 'tags.create' | 'tags.update' | 'tags.delete'
   | 'customFields.list' | 'customFields.get' | 'customFields.create' | 'customFields.update' | 'customFields.delete'
   | 'customValues.list' | 'customValues.get' | 'customValues.create' | 'customValues.update' | 'customValues.delete'
@@ -39,6 +43,7 @@ interface GHLRequestPayload {
   id?: string;
   contactId?: string;
   taskId?: string;
+  noteId?: string;
 }
 
 // Single API endpoint for all GHL operations
@@ -78,6 +83,9 @@ export const contactsApi = {
 
   delete: (id: string) =>
     ghlRequest<void>({ action: 'contacts.delete', id }),
+
+  addTag: (contactId: string, tags: string[]) =>
+    ghlRequest<GHLContact>({ action: 'contacts.addTag', contactId, data: { tags } }),
 };
 
 // ============ OPPORTUNITIES ============
@@ -129,6 +137,24 @@ export const tasksApi = {
 
   complete: (contactId: string, taskId: string, completed: boolean) =>
     ghlRequest<GHLTask>({ action: 'tasks.complete', contactId, taskId, data: { completed } }),
+};
+
+// ============ NOTES ============
+export const notesApi = {
+  listByContact: (contactId: string) =>
+    ghlRequest<GHLNote[]>({ action: 'notes.list', contactId }),
+
+  get: (contactId: string, noteId: string) =>
+    ghlRequest<GHLNote>({ action: 'notes.get', contactId, noteId }),
+
+  create: (contactId: string, data: GHLNoteCreate) =>
+    ghlRequest<GHLNote>({ action: 'notes.create', contactId, data }),
+
+  update: (contactId: string, noteId: string, data: GHLNoteUpdate) =>
+    ghlRequest<GHLNote>({ action: 'notes.update', contactId, noteId, data }),
+
+  delete: (contactId: string, noteId: string) =>
+    ghlRequest<void>({ action: 'notes.delete', contactId, noteId }),
 };
 
 // ============ TAGS ============
