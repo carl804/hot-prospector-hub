@@ -84,7 +84,14 @@ export function useDeleteGHLNote() {
   });
 }
 
-// CSM notification tag - triggers GHL workflow for Slack notification
+// Notification tags - triggers GHL workflow for Slack notification
+// Using actual GHL tag names from the location
+const NOTIFICATION_TAGS = {
+  draftBuild: 'build-draft-notified',
+  setupComplete: 'build-complete-notified',
+} as const;
+
+// Legacy CSM-specific tags (kept for manual note notifications)
 const CSM_NOTIFY_TAGS = {
   chloe: 'notify-csm-chloe',
   jonathan: 'notify-csm-jonathan',
@@ -102,28 +109,61 @@ export function useNotifyCSM() {
       recipients,
       noteIds,
       clientName,
+      notificationType,
     }: {
       contactId: string;
       recipients: CSMRecipient[];
       noteIds: string[];
       clientName: string;
+      notificationType?: 'draft' | 'complete' | null;
     }) => {
-      // Add notification tags to trigger GHL workflow
-      const tags = recipients.map(r => CSM_NOTIFY_TAGS[r]);
+      // Build tags array based on notification type
+      const tags: string[] = [];
 
-      // Also add a tag with the note info for the workflow to pick up
-      // The workflow will read the latest notes and send to Slack
+      // Add milestone tag (triggers GHL workflow)
+      if (notificationType === 'complete') {
+        tags.push(NOTIFICATION_TAGS.setupComplete);
+      } else if (notificationType === 'draft') {
+        tags.push(NOTIFICATION_TAGS.draftBuild);
+      } else {
+        // For manual notifications without type, add CSM-specific tags
+        tags.push(...recipients.map(r => CSM_NOTIFY_TAGS[r]));
+      }
+
+      // Add timestamp tag for tracking
       const notifyTag = `csm-notify-${Date.now()}`;
+      tags.push(notifyTag);
 
-      await contactsApi.addTag(contactId, [...tags, notifyTag]);
+      // Add tags to contact
+      console.log('🏷️  Adding tags to contact:', { contactId, tags, notificationType });
+      await contactsApi.addTag(contactId, tags);
 
-      return { success: true, recipients, noteIds };
+      // If this is a setup complete notification, update the custom field
+      if (notificationType === 'complete') {
+        console.log('✅ Updating custom field: setup_complete_notified = Yes');
+        await contactsApi.updateCustomField(contactId, 'contact.setup_complete_notified', 'Yes');
+      } else if (notificationType === 'draft') {
+        console.log('✅ Updating custom field: draft_build_notified = Yes');
+        await contactsApi.updateCustomField(contactId, 'contact.draft_build_notified', 'Yes');
+      }
+
+      console.log('🎉 Notification complete!', { tags, notificationType });
+      return { success: true, recipients, noteIds, notificationType, tags };
     },
-    onSuccess: (_, variables) => {
-      const recipientNames = variables.recipients.map(r =>
-        r === 'chloe' ? 'Chloe' : 'Jonathan'
-      ).join(' and ');
-      toast.success(`Notification sent to ${recipientNames}`);
+    onSuccess: (data, variables) => {
+      if (data.notificationType === 'complete') {
+        toast.success(`🎉 Setup Complete notification sent! GHL workflow triggered.`);
+      } else if (data.notificationType === 'draft') {
+        toast.success(`📝 Draft Build notification sent! GHL workflow triggered.`);
+      } else {
+        const recipientNames = variables.recipients.map(r =>
+          r === 'chloe' ? 'Chloe' : 'Jonathan'
+        ).join(' and ');
+        toast.success(`Notification sent to ${recipientNames}`);
+      }
+
+      // Invalidate custom fields query to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['ghl', 'contacts', 'customFields'] });
     },
     onError: (error: Error) => {
       toast.error(`Failed to notify CSM: ${error.message}`);

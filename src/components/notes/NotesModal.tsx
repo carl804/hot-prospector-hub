@@ -33,7 +33,6 @@ import {
   useUpdateGHLNote,
   useDeleteGHLNote,
   useNotifyCSM,
-  type CSMRecipient,
 } from '@/hooks/useGHLNotes';
 import type { GHLNote } from '@/types/ghl';
 
@@ -43,13 +42,41 @@ interface NotesModalProps {
   onClose: () => void;
   completedTasks?: number;
   totalTasks?: number;
+  draftBuildNotified?: boolean;
+  setupCompleteNotified?: boolean;
+  assessmentBooked?: boolean;
+  assessmentDate?: string;
+  onboardingBooked?: boolean;
+  onboardingDate?: string;
+  kickoffBooked?: boolean;
+  kickoffDate?: string;
 }
 
-export function NotesModal({ contactId, clientName, onClose, completedTasks = 0, totalTasks = 0 }: NotesModalProps) {
+export function NotesModal({
+  contactId,
+  clientName,
+  onClose,
+  completedTasks = 0,
+  totalTasks = 0,
+  draftBuildNotified = false,
+  setupCompleteNotified = false,
+  assessmentBooked = false,
+  assessmentDate,
+  onboardingBooked = false,
+  onboardingDate,
+  kickoffBooked = false,
+  kickoffDate,
+}: NotesModalProps) {
   const { data: notes = [], isLoading } = useGHLNotes(contactId);
 
   // Calculate progress percentage
   const progressPercent = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  // Determine notification state
+  const allCallsBooked = assessmentBooked && onboardingBooked && kickoffBooked;
+  const isSetupComplete = progressPercent === 100 && allCallsBooked;
+  const showSetupCompleteNotification = isSetupComplete && !setupCompleteNotified;
+
   const createNoteMutation = useCreateGHLNote();
   const updateNoteMutation = useUpdateGHLNote();
   const deleteNoteMutation = useDeleteGHLNote();
@@ -59,9 +86,9 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const [editingNoteBody, setEditingNoteBody] = useState('');
   const [selectedNoteIds, setSelectedNoteIds] = useState<Set<string>>(new Set());
-  const [selectedCSMs, setSelectedCSMs] = useState<Set<CSMRecipient>>(new Set());
   const [deleteConfirmNoteId, setDeleteConfirmNoteId] = useState<string | null>(null);
   const [showNotifyPanel, setShowNotifyPanel] = useState(false);
+  const [notificationType, setNotificationType] = useState<'draft' | 'complete' | null>(null);
 
   // Sort notes by date (most recent first)
   const sortedNotes = [...notes].sort(
@@ -124,32 +151,19 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
     });
   };
 
-  const toggleCSMSelection = (csm: CSMRecipient) => {
-    setSelectedCSMs((prev) => {
-      const newSet = new Set(prev);
-      if (newSet.has(csm)) {
-        newSet.delete(csm);
-      } else {
-        newSet.add(csm);
-      }
-      return newSet;
-    });
-  };
-
-  const handleNotifyCSM = async () => {
-    if (selectedNoteIds.size === 0 || selectedCSMs.size === 0) return;
-
+  const handleNotifyCSM = async (type: 'draft' | 'complete') => {
     await notifyCSMMutation.mutateAsync({
       contactId,
-      recipients: Array.from(selectedCSMs),
+      recipients: [],
       noteIds: Array.from(selectedNoteIds),
       clientName,
+      notificationType: type,
     });
 
     // Reset selections after successful notification
     setSelectedNoteIds(new Set());
-    setSelectedCSMs(new Set());
     setShowNotifyPanel(false);
+    setNotificationType(null);
   };
 
   const selectAllNotes = () => {
@@ -161,46 +175,48 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[100] animate-fade-in">
+    <div className="fixed inset-0 z-[100]">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"
         onClick={onClose}
       />
 
-      {/* Modal */}
-      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-3xl bg-card rounded-2xl shadow-2xl overflow-hidden animate-scale-in max-h-[85vh] flex flex-col border border-border/50">
+      {/* Modal - 2 Column Layout */}
+      <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-5xl bg-card rounded-2xl shadow-2xl overflow-hidden animate-fade-in max-h-[85vh] flex flex-col border border-border/50">
         {/* Header */}
-        <div className="px-7 py-6 border-b border-border/50 shrink-0 bg-gradient-to-b from-secondary/30 to-transparent">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-                <MessageSquare className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-foreground tracking-tight">Notes</h2>
-                <p className="text-sm text-muted-foreground">{clientName}</p>
-              </div>
+        <div className="px-6 py-4 border-b border-border/50 shrink-0 bg-gradient-to-b from-secondary/30 to-transparent flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
+              <MessageSquare className="w-4.5 h-4.5 text-primary" />
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onClose}
-              className="rounded-xl hover:bg-secondary"
-            >
-              <X className="w-5 h-5" />
-            </Button>
+            <div>
+              <h2 className="text-base font-semibold text-foreground tracking-tight">{clientName}</h2>
+              <p className="text-xs text-muted-foreground">Contact Notes</p>
+            </div>
           </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="rounded-xl hover:bg-secondary h-8 w-8"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
 
-          {/* Task Progress Bar */}
-          {totalTasks > 0 && (
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-border/40">
-              <div className="flex-1">
+        {/* 2 Column Content */}
+        <div className="flex-1 flex min-h-0">
+          {/* Left Column - Actions */}
+          <div className="w-80 shrink-0 border-r border-border/50 flex flex-col bg-secondary/10">
+            {/* Progress Bar */}
+            {totalTasks > 0 && (
+              <div className="p-4 border-b border-border/40">
                 <div className="flex items-center justify-between text-xs mb-2">
                   <span className="text-muted-foreground font-medium uppercase tracking-wide">Progress</span>
                   <span className="font-semibold text-foreground tabular-nums">{progressPercent}%</span>
                 </div>
-                <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div className="h-2 bg-secondary rounded-full overflow-hidden">
                   <div
                     className={cn(
                       'h-full rounded-full transition-all duration-500 ease-out',
@@ -211,233 +227,210 @@ export function NotesModal({ contactId, clientName, onClose, completedTasks = 0,
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
+                <p className="text-xs text-muted-foreground mt-1.5 tabular-nums">{completedTasks} of {totalTasks} tasks</p>
               </div>
-              <span className="text-sm font-medium text-muted-foreground whitespace-nowrap tabular-nums">
-                {completedTasks}/{totalTasks}
-              </span>
-            </div>
-          )}
-        </div>
+            )}
 
-        {/* Add New Note Section */}
-        <div className="px-7 py-5 border-b border-border/50 bg-secondary/20 shrink-0">
-          <Textarea
-            value={newNoteBody}
-            onChange={(e) => setNewNoteBody(e.target.value)}
-            placeholder="Write a note..."
-            className="bg-background border-border/50 min-h-[80px] resize-none rounded-xl focus:border-primary/50 transition-colors"
-          />
-          <div className="flex justify-end mt-3">
-            <Button
-              onClick={handleAddNote}
-              disabled={!newNoteBody.trim() || createNoteMutation.isPending}
-              className="gap-2 rounded-xl shadow-sm"
-            >
-              {createNoteMutation.isPending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Plus className="w-4 h-4" />
-              )}
-              Add Note
-            </Button>
-          </div>
-        </div>
-
-        {/* Actions Bar */}
-        {sortedNotes.length > 0 && (
-          <div className="px-7 py-4 border-b border-border/50 flex items-center justify-between bg-background shrink-0">
-            <div className="flex items-center gap-3">
+            {/* Add Note */}
+            <div className="p-4 border-b border-border/40">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Add Note</p>
+              <Textarea
+                value={newNoteBody}
+                onChange={(e) => setNewNoteBody(e.target.value)}
+                placeholder="Write a note..."
+                className="bg-background border-border/50 min-h-[100px] resize-none rounded-lg text-sm focus:border-primary/50 transition-colors"
+              />
               <Button
-                variant="ghost"
+                onClick={handleAddNote}
+                disabled={!newNoteBody.trim() || createNoteMutation.isPending}
+                className="w-full mt-3 gap-2 rounded-lg"
                 size="sm"
-                onClick={selectAllNotes}
-                className="gap-2 text-xs rounded-lg h-8"
               >
-                {selectedNoteIds.size === sortedNotes.length ? (
-                  <CheckSquare className="w-3.5 h-3.5" />
+                {createNoteMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Square className="w-3.5 h-3.5" />
+                  <Plus className="w-4 h-4" />
                 )}
-                {selectedNoteIds.size === sortedNotes.length ? 'Deselect' : 'Select All'}
+                Add Note
               </Button>
-              {selectedNoteIds.size > 0 && (
-                <span className="text-xs text-muted-foreground font-medium px-2 py-1 bg-secondary rounded-md">
-                  {selectedNoteIds.size} selected
-                </span>
-              )}
             </div>
 
-            <Button
-              variant={showNotifyPanel ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setShowNotifyPanel(!showNotifyPanel)}
-              disabled={selectedNoteIds.size === 0}
-              className="gap-2 rounded-lg h-8"
-            >
-              <Send className="w-3.5 h-3.5" />
-              Notify CSM
-            </Button>
-          </div>
-        )}
-
-        {/* Notify CSM Panel */}
-        {showNotifyPanel && selectedNoteIds.size > 0 && (
-          <div className="px-7 py-5 border-b border-border bg-primary/5 shrink-0">
-            <p className="text-sm font-medium text-foreground mb-3">
-              Select CSM(s) to notify:
-            </p>
-            <div className="flex items-center gap-4 mb-4">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <Checkbox
-                  checked={selectedCSMs.has('chloe')}
-                  onCheckedChange={() => toggleCSMSelection('chloe')}
-                />
-                <span className="text-sm">Chloe</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <Checkbox
-                  checked={selectedCSMs.has('jonathan')}
-                  onCheckedChange={() => toggleCSMSelection('jonathan')}
-                />
-                <span className="text-sm">Jonathan</span>
-              </label>
-            </div>
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
-                {selectedNoteIds.size} note{selectedNoteIds.size > 1 ? 's' : ''} will be sent via Slack
+            {/* Notify CSM */}
+            <div className="p-4 flex-1">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">Notify CSM</p>
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleNotifyCSM('draft')}
+                  disabled={notifyCSMMutation.isPending}
+                  className={cn(
+                    "w-full justify-start gap-2 h-10 rounded-lg",
+                    showSetupCompleteNotification && "border-secondary-accent/50"
+                  )}
+                >
+                  {notifyCSMMutation.isPending && notificationType === 'draft' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <span>📝</span>
+                  )}
+                  Draft Build Complete
+                </Button>
+                <Button
+                  variant={showSetupCompleteNotification ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleNotifyCSM('complete')}
+                  disabled={notifyCSMMutation.isPending}
+                  className={cn(
+                    "w-full justify-start gap-2 h-10 rounded-lg",
+                    showSetupCompleteNotification && "bg-gradient-to-r from-secondary-accent to-secondary-accent/80 hover:from-secondary-accent/90 hover:to-secondary-accent/70 text-black font-semibold shadow-glow-gold"
+                  )}
+                >
+                  {notifyCSMMutation.isPending && notificationType === 'complete' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <span>🎉</span>
+                  )}
+                  Setup Complete
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Triggers GHL workflow notification
               </p>
-              <div className="flex gap-2">
+            </div>
+          </div>
+
+          {/* Right Column - Notes History */}
+          <div className="flex-1 flex flex-col min-w-0">
+            {/* Notes Header */}
+            <div className="px-5 py-3 border-b border-border/50 flex items-center justify-between bg-background shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">Notes History</span>
+                <span className="text-xs text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">
+                  {sortedNotes.length}
+                </span>
+              </div>
+              {sortedNotes.length > 0 && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => {
-                    setShowNotifyPanel(false);
-                    setSelectedCSMs(new Set());
-                  }}
+                  onClick={selectAllNotes}
+                  className="gap-1.5 text-xs rounded-lg h-7 px-2"
                 >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleNotifyCSM}
-                  disabled={selectedCSMs.size === 0 || notifyCSMMutation.isPending}
-                  className="gap-2"
-                >
-                  {notifyCSMMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                  {selectedNoteIds.size === sortedNotes.length ? (
+                    <CheckSquare className="w-3.5 h-3.5" />
                   ) : (
-                    <Send className="w-4 h-4" />
+                    <Square className="w-3.5 h-3.5" />
                   )}
-                  Send Notification
+                  {selectedNoteIds.size === sortedNotes.length ? 'Deselect' : 'Select All'}
                 </Button>
+              )}
+            </div>
+
+            {/* Notes List */}
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
+              <div className="p-4 space-y-3">
+                {isLoading ? (
+                  <>
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-20 w-full" />
+                      </div>
+                    ))}
+                  </>
+                ) : sortedNotes.length === 0 ? (
+                  <div className="text-center py-12">
+                    <MessageSquare className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">No notes yet</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">
+                      Add a note to get started
+                    </p>
+                  </div>
+                ) : (
+                  sortedNotes.map((note) => (
+                    <div
+                      key={note.id}
+                      className={cn(
+                        'rounded-lg border border-border/60 p-4 transition-all',
+                        selectedNoteIds.has(note.id) && 'border-primary bg-primary/5',
+                        editingNoteId === note.id && 'border-primary'
+                      )}
+                    >
+                      {editingNoteId === note.id ? (
+                        // Edit Mode
+                        <div className="space-y-3">
+                          <Textarea
+                            value={editingNoteBody}
+                            onChange={(e) => setEditingNoteBody(e.target.value)}
+                            className="bg-background min-h-[100px] resize-none text-sm"
+                            autoFocus
+                          />
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleCancelEdit}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleUpdateNote(note.id)}
+                              disabled={!editingNoteBody.trim() || updateNoteMutation.isPending}
+                            >
+                              {updateNoteMutation.isPending ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                'Save'
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        // View Mode
+                        <div className="flex items-start gap-3">
+                          <Checkbox
+                            checked={selectedNoteIds.has(note.id)}
+                            onCheckedChange={() => toggleNoteSelection(note.id)}
+                            className="mt-0.5"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(note.dateAdded), 'MMM d, yyyy h:mm a')}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-md hover:bg-secondary"
+                                  onClick={() => handleStartEdit(note)}
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-md text-destructive hover:text-destructive hover:bg-destructive/10"
+                                  onClick={() => setDeleteConfirmNoteId(note.id)}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </div>
+                            <div
+                              className="text-sm text-foreground whitespace-pre-wrap break-words"
+                              dangerouslySetInnerHTML={{ __html: note.body }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Notes List */}
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
-          <div className="p-7 space-y-5">
-            {isLoading ? (
-              <>
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-20 w-full" />
-                  </div>
-                ))}
-              </>
-            ) : sortedNotes.length === 0 ? (
-              <div className="text-center py-12">
-                <MessageSquare className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-muted-foreground">No notes yet</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">
-                  Add a note above to get started
-                </p>
-              </div>
-            ) : (
-              sortedNotes.map((note) => (
-                <div
-                  key={note.id}
-                  className={cn(
-                    'rounded-xl border border-border/60 p-5 transition-all',
-                    selectedNoteIds.has(note.id) && 'border-primary bg-primary/5',
-                    editingNoteId === note.id && 'border-primary'
-                  )}
-                >
-                  {editingNoteId === note.id ? (
-                    // Edit Mode
-                    <div className="space-y-3">
-                      <Textarea
-                        value={editingNoteBody}
-                        onChange={(e) => setEditingNoteBody(e.target.value)}
-                        className="bg-background min-h-[100px] resize-none"
-                        autoFocus
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleCancelEdit}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleUpdateNote(note.id)}
-                          disabled={!editingNoteBody.trim() || updateNoteMutation.isPending}
-                        >
-                          {updateNoteMutation.isPending ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            'Save'
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    // View Mode
-                    <>
-                      <div className="flex items-start gap-3">
-                        <Checkbox
-                          checked={selectedNoteIds.has(note.id)}
-                          onCheckedChange={() => toggleNoteSelection(note.id)}
-                          className="mt-1"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(note.dateAdded), 'MMM d, yyyy h:mm a')}
-                            </span>
-                            <div className="flex items-center gap-1.5">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-lg hover:bg-secondary"
-                                onClick={() => handleStartEdit(note)}
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-lg text-destructive hover:text-destructive hover:bg-destructive/10"
-                                onClick={() => setDeleteConfirmNoteId(note.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                          <p className="text-sm text-foreground whitespace-pre-wrap">
-                            {note.body}
-                          </p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))
-            )}
           </div>
         </div>
       </div>

@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Search, Plus, Building2, Clock, AlertTriangle, Users, Activity } from 'lucide-react';
+import { Search, Building2, Clock, AlertTriangle, Users, Activity } from 'lucide-react';
 import { Client, CSM_LIST } from '@/types/client';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,6 +22,8 @@ const GHL_FIELD_KEYS = {
   onboardingDate: 'contact.onboarding_call_booked_date',
   kickoffBooked: 'contact.kickoff_call_booked',
   kickoffDate: 'contact.kickoff_call_booked_date',
+  draftBuildNotified: 'contact.draft_build_notified',
+  setupCompleteNotified: 'contact.setup_complete_notified',
 };
 
 // Helper to get custom field value from contact by exact fieldKey
@@ -55,7 +56,7 @@ export function ClientDashboard() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
   const [csmFilter, setCsmFilter] = useState('all');
-  const [notesClient, setNotesClient] = useState<{ contactId: string; name: string; tasks: any[] } | null>(null);
+  const [notesClient, setNotesClient] = useState<Client & { tasks: any[] } | null>(null);
 
   // First pass: extract basic client data and contact IDs
   const { basicClients, contactIds } = useMemo(() => {
@@ -110,6 +111,8 @@ export function ClientDashboard() {
       const assessmentValue = getValue(GHL_FIELD_KEYS.assessmentBooked);
       const onboardingValue = getValue(GHL_FIELD_KEYS.onboardingBooked);
       const kickoffValue = getValue(GHL_FIELD_KEYS.kickoffBooked);
+      const draftBuildNotifiedValue = getValue(GHL_FIELD_KEYS.draftBuildNotified);
+      const setupCompleteNotifiedValue = getValue(GHL_FIELD_KEYS.setupCompleteNotified);
 
       // Debug logging for all clients
       console.log(`📋 ${client.name} Custom Fields:`, {
@@ -117,6 +120,8 @@ export function ClientDashboard() {
         assessmentValue,
         onboardingValue,
         kickoffValue,
+        draftBuildNotifiedValue,
+        setupCompleteNotifiedValue,
         customFieldsCount: customFields?.length || 0,
         customFields: customFields?.slice(0, 5), // First 5 fields
       });
@@ -129,6 +134,8 @@ export function ClientDashboard() {
         onboardingDate: getValue(GHL_FIELD_KEYS.onboardingDate) || undefined,
         kickoffBooked: isFieldTrue(kickoffValue),
         kickoffDate: getValue(GHL_FIELD_KEYS.kickoffDate) || undefined,
+        draftBuildNotified: isFieldTrue(draftBuildNotifiedValue),
+        setupCompleteNotified: isFieldTrue(setupCompleteNotifiedValue),
       };
     });
   }, [basicClients, customFieldsMap]);
@@ -206,73 +213,79 @@ export function ClientDashboard() {
   return (
     <div className="p-6 lg:p-8 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Clients</h1>
-          <p className="text-muted-foreground text-sm mt-1">Manage your client accounts</p>
-        </div>
-        <Button className="shadow-sm">
-          <Plus className="mr-2 h-4 w-4" />
-          New Client
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">Clients</h1>
+        <p className="text-muted-foreground text-sm mt-1">Manage your client accounts</p>
       </div>
 
-      {/* Premium Stats Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Total Clients */}
-        <div className="group relative bg-card rounded-2xl border border-border/40 p-5 transition-all duration-200 hover:border-border/60 hover:shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-primary" />
+      {/* 🚀 2025 Modern Stats Cards - Glassmorphism + Gradients */}
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Total Clients - Primary gradient */}
+        <div className="group relative card-modern overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center shadow-soft group-hover:scale-110 transition-transform duration-300">
+                <Users className="w-5 h-5 text-primary drop-shadow" />
+              </div>
+              <span className="text-[10px] font-bold text-muted-foreground/70 px-2.5 py-1 bg-muted/60 rounded-lg uppercase tracking-wider">
+                Total
+              </span>
             </div>
-            <span className="text-xs font-medium text-muted-foreground px-2 py-1 bg-secondary/80 rounded-md">
-              Total
-            </span>
+            <p className="text-4xl font-black tracking-tighter tabular-nums mb-1">{stats.total}</p>
+            <p className="text-xs text-muted-foreground font-semibold">Clients</p>
           </div>
-          <p className="text-3xl font-bold tracking-tight tabular-nums">{stats.total}</p>
-          <p className="text-sm text-muted-foreground mt-1">Clients</p>
         </div>
 
-        {/* Active */}
-        <div className="group relative bg-card rounded-2xl border border-border/40 p-5 transition-all duration-200 hover:border-border/60 hover:shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-success/10 flex items-center justify-center">
-              <Activity className="w-5 h-5 text-success" />
+        {/* Active - Success gradient */}
+        <div className="group relative card-modern overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-success/20 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-success/15 to-success/5 flex items-center justify-center shadow-soft group-hover:scale-110 transition-transform duration-300">
+                <Activity className="w-5 h-5 text-success drop-shadow" />
+              </div>
+              <span className="text-[10px] font-bold text-success/80 px-2.5 py-1 bg-success/10 rounded-lg uppercase tracking-wider shadow-soft">
+                Active
+              </span>
             </div>
-            <span className="text-xs font-medium text-success px-2 py-1 bg-success/10 rounded-md">
-              Active
-            </span>
+            <p className="text-4xl font-black tracking-tighter tabular-nums text-success mb-1">{stats.active}</p>
+            <p className="text-xs text-muted-foreground font-semibold">In progress</p>
           </div>
-          <p className="text-3xl font-bold tracking-tight tabular-nums text-success">{stats.active}</p>
-          <p className="text-sm text-muted-foreground mt-1">In progress</p>
         </div>
 
-        {/* At Risk */}
-        <div className="group relative bg-card rounded-2xl border border-border/40 p-5 transition-all duration-200 hover:border-border/60 hover:shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-destructive/10 flex items-center justify-center">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
+        {/* At Risk - Destructive gradient */}
+        <div className="group relative card-modern overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-destructive/20 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-destructive/15 to-destructive/5 flex items-center justify-center shadow-soft group-hover:scale-110 transition-transform duration-300">
+                <AlertTriangle className="w-5 h-5 text-destructive drop-shadow animate-pulse" />
+              </div>
+              <span className="text-[10px] font-bold text-destructive/80 px-2.5 py-1 bg-destructive/10 rounded-lg uppercase tracking-wider shadow-soft">
+                Risk
+              </span>
             </div>
-            <span className="text-xs font-medium text-destructive px-2 py-1 bg-destructive/10 rounded-md">
-              Risk
-            </span>
+            <p className="text-4xl font-black tracking-tighter tabular-nums text-destructive mb-1">{stats.atRisk}</p>
+            <p className="text-xs text-muted-foreground font-semibold">Need attention</p>
           </div>
-          <p className="text-3xl font-bold tracking-tight tabular-nums text-destructive">{stats.atRisk}</p>
-          <p className="text-sm text-muted-foreground mt-1">Need attention</p>
         </div>
 
-        {/* Due Today */}
-        <div className="group relative bg-card rounded-2xl border border-border/40 p-5 transition-all duration-200 hover:border-border/60 hover:shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <div className="w-10 h-10 rounded-xl bg-warning/10 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-warning" />
+        {/* Due Today - Warning gradient */}
+        <div className="group relative card-modern overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-warning/20 to-transparent rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:scale-150 transition-transform duration-500" />
+          <div className="relative">
+            <div className="flex items-center justify-between mb-4">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-warning/15 to-warning/5 flex items-center justify-center shadow-soft group-hover:scale-110 transition-transform duration-300">
+                <Clock className="w-5 h-5 text-warning drop-shadow" />
+              </div>
+              <span className="text-[10px] font-bold text-warning/90 px-2.5 py-1 bg-warning/10 rounded-lg uppercase tracking-wider shadow-soft">
+                Today
+              </span>
             </div>
-            <span className="text-xs font-medium text-warning px-2 py-1 bg-warning/10 rounded-md">
-              Today
-            </span>
+            <p className="text-4xl font-black tracking-tighter tabular-nums text-warning mb-1">{stats.dueToday}</p>
+            <p className="text-xs text-muted-foreground font-semibold">Due today</p>
           </div>
-          <p className="text-3xl font-bold tracking-tight tabular-nums text-warning">{stats.dueToday}</p>
-          <p className="text-sm text-muted-foreground mt-1">Due today</p>
         </div>
       </div>
 
@@ -320,21 +333,13 @@ export function ClientDashboard() {
               onClick={() => {
                 // Clicking the card also opens notes modal
                 if (client.contactId) {
-                  setNotesClient({
-                    contactId: client.contactId,
-                    name: client.name,
-                    tasks: client.tasks,
-                  });
+                  setNotesClient({ ...client, tasks: client.tasks });
                 }
               }}
               onNotesClick={(e) => {
                 e.stopPropagation();
                 if (client.contactId) {
-                  setNotesClient({
-                    contactId: client.contactId,
-                    name: client.name,
-                    tasks: client.tasks,
-                  });
+                  setNotesClient({ ...client, tasks: client.tasks });
                 }
               }}
             />
@@ -343,12 +348,20 @@ export function ClientDashboard() {
       )}
 
       {/* Notes Modal */}
-      {notesClient && (
+      {notesClient && notesClient.contactId && (
         <NotesModal
           contactId={notesClient.contactId}
           clientName={notesClient.name}
           completedTasks={notesClient.tasks.filter((t: any) => t.status === 'completed').length}
           totalTasks={notesClient.tasks.length}
+          draftBuildNotified={notesClient.draftBuildNotified}
+          setupCompleteNotified={notesClient.setupCompleteNotified}
+          assessmentBooked={notesClient.assessmentBooked}
+          assessmentDate={notesClient.assessmentDate}
+          onboardingBooked={notesClient.onboardingBooked}
+          onboardingDate={notesClient.onboardingDate}
+          kickoffBooked={notesClient.kickoffBooked}
+          kickoffDate={notesClient.kickoffDate}
           onClose={() => setNotesClient(null)}
         />
       )}

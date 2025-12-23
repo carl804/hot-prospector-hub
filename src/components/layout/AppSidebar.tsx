@@ -1,9 +1,9 @@
-import { Building2, ListTodo, AlertTriangle, Clock, Activity, Users, Zap } from 'lucide-react';
+import { Building2, ListTodo, AlertTriangle, Clock, Activity, Zap } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import { useMemo } from 'react';
-import { MOCK_TASKS } from '@/data/taskData';
-import { CLIENTS } from '@/types/client';
+import { useGHLOpportunities } from '@/hooks/useGHLOpportunities';
+import { usePipelineTasks } from '@/hooks/useGHLTasks';
 import { isToday, isPast, startOfDay } from 'date-fns';
 import {
   Sidebar,
@@ -20,24 +20,40 @@ import {
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 
+// Use the same pipeline as the Tasks page
+const TARGET_PIPELINE_ID = "QNloaHE61P6yedF6jEzk";
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
   const location = useLocation();
 
-  // Calculate stats
+  // Fetch real GHL data from the same pipeline as Tasks page
+  const { data: opportunitiesData } = useGHLOpportunities();
+  const { data: tasksData = [] } = usePipelineTasks(TARGET_PIPELINE_ID);
+
+  // Calculate stats from real pipeline tasks (matching Tasks page logic)
   const stats = useMemo(() => {
-    const tasks = MOCK_TASKS;
+    const opportunities = opportunitiesData?.opportunities || [];
+    const tasks = tasksData;
+
+    // Count active opportunities (clients) in the pipeline
+    const pipelineOpportunities = opportunities.filter((opp) => opp.pipelineId === TARGET_PIPELINE_ID);
+    const activeClients = pipelineOpportunities.filter((opp) =>
+      opp.status === 'open' || opp.status === 'won'
+    ).length;
+
+    // Task stats - EXACT same logic as Tasks.tsx
     const activeTasks = tasks.filter((t) => t.status !== 'completed');
     const completedTasks = tasks.filter((t) => t.status === 'completed');
+
     const overdueTasks = activeTasks.filter((t) => {
+      if (!t.dueDate) return false;
       const dueDate = startOfDay(new Date(t.dueDate));
       return isPast(dueDate) && !isToday(dueDate);
     });
-    const dueTodayTasks = activeTasks.filter((t) => isToday(new Date(t.dueDate)));
 
-    const activeClients = CLIENTS.filter((c) => c.status !== 'completed').length;
-    const totalClients = CLIENTS.length;
+    const dueTodayTasks = activeTasks.filter((t) => t.dueDate && isToday(new Date(t.dueDate)));
 
     const completionRate = tasks.length > 0
       ? Math.round((completedTasks.length / tasks.length) * 100)
@@ -49,10 +65,10 @@ export function AppSidebar() {
       dueToday: dueTodayTasks.length,
       completed: completedTasks.length,
       activeClients,
-      totalClients,
+      totalClients: pipelineOpportunities.length,
       completionRate,
     };
-  }, []);
+  }, [opportunitiesData, tasksData]);
 
   const navItems = [
     {
@@ -70,13 +86,6 @@ export function AppSidebar() {
       badgeVariant: stats.overdue > 0 ? 'destructive' as const : 'default' as const,
     },
     {
-      title: 'My Staff',
-      url: '/staff',
-      icon: Users,
-      badge: 0,
-      badgeVariant: 'default' as const,
-    },
-    {
       title: 'Activity',
       url: '/activity',
       icon: Activity,
@@ -86,29 +95,30 @@ export function AppSidebar() {
   ];
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-sidebar-border/60 bg-sidebar/95 backdrop-blur-xl">
-      {/* Modern Header with Logo */}
-      <SidebarHeader className="p-4 border-b border-sidebar-border/40">
+    <Sidebar collapsible="icon" className="border-r border-sidebar-border/40 glass">
+      {/* 2025 Header with Gradient Logo */}
+      <SidebarHeader className="p-4 border-b border-sidebar-border/30">
         <div className="flex items-center gap-3">
           <div className={cn(
-            "relative shrink-0 transition-all duration-300",
-            collapsed ? "w-8 h-8" : "w-10 h-10"
+            "relative shrink-0 transition-all duration-300 group",
+            collapsed ? "w-9 h-9" : "w-11 h-11"
           )}>
-            {/* Logo with gradient and glow */}
-            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary via-primary to-blue-600 shadow-lg shadow-primary/25" />
+            {/* Animated gradient logo with glow */}
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary via-secondary-accent to-primary shadow-glow-lg animate-glow-pulse" />
+            <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-primary/90 via-secondary-accent/90 to-primary/90" />
             <div className="absolute inset-0 rounded-xl flex items-center justify-center">
               <Zap className={cn(
-                "text-white transition-all duration-300",
-                collapsed ? "w-4 h-4" : "w-5 h-5"
+                "text-white transition-all duration-300 drop-shadow-lg",
+                collapsed ? "w-5 h-5" : "w-6 h-6"
               )} />
             </div>
           </div>
           {!collapsed && (
             <div className="overflow-hidden animate-fade-in">
-              <h1 className="text-sm font-semibold text-foreground tracking-tight truncate">
+              <h1 className="text-sm font-bold text-foreground tracking-tighter truncate">
                 Hot Prospector
               </h1>
-              <p className="text-[11px] text-muted-foreground truncate">
+              <p className="text-[11px] text-muted-foreground/80 truncate font-medium">
                 Task Manager
               </p>
             </div>
@@ -129,10 +139,10 @@ export function AppSidebar() {
                       isActive={isActive}
                       tooltip={item.title}
                       className={cn(
-                        "relative group/item rounded-lg transition-all duration-200",
+                        "relative group/item rounded-xl transition-all duration-300 magnetic-hover",
                         isActive
-                          ? "bg-primary/10 text-primary hover:bg-primary/15"
-                          : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                          ? "bg-gradient-to-r from-primary/15 to-primary/10 text-primary hover:from-primary/20 hover:to-primary/15 shadow-soft"
+                          : "text-muted-foreground hover:bg-gradient-to-r hover:from-accent hover:to-accent/50 hover:text-foreground"
                       )}
                     >
                       <NavLink
@@ -141,31 +151,31 @@ export function AppSidebar() {
                         className="flex items-center gap-3 px-3 py-2.5"
                         activeClassName=""
                       >
-                        {/* Active indicator bar */}
+                        {/* Modern active indicator */}
                         {isActive && (
-                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 bg-primary rounded-r-full" />
+                          <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-gradient-to-b from-primary via-secondary-accent to-primary rounded-r-full shadow-glow" />
                         )}
 
                         <item.icon className={cn(
-                          "w-[18px] h-[18px] shrink-0 transition-transform duration-200",
-                          isActive && "scale-110"
+                          "w-[18px] h-[18px] shrink-0 transition-all duration-300",
+                          isActive && "scale-110 drop-shadow-lg text-primary"
                         )} />
 
                         <span className={cn(
-                          "flex-1 text-[13px] font-medium",
-                          isActive && "text-primary"
+                          "flex-1 text-[13px] font-semibold transition-all",
+                          isActive && "text-primary tracking-tight"
                         )}>
                           {item.title}
                         </span>
 
                         {!collapsed && item.badge > 0 && (
                           <span className={cn(
-                            'text-[11px] font-semibold px-2 py-0.5 rounded-full transition-colors',
+                            'text-[11px] font-bold px-2.5 py-0.5 rounded-lg transition-all duration-300',
                             item.badgeVariant === 'destructive'
-                              ? 'bg-destructive/15 text-destructive'
+                              ? 'bg-gradient-to-r from-destructive/20 to-destructive/15 text-destructive shadow-soft'
                               : isActive
-                                ? 'bg-primary/20 text-primary'
-                                : 'bg-muted text-muted-foreground'
+                                ? 'bg-gradient-to-r from-primary/25 to-primary/20 text-primary shadow-soft'
+                                : 'bg-muted/80 text-muted-foreground'
                           )}>
                             {item.badge}
                           </span>
@@ -187,43 +197,49 @@ export function AppSidebar() {
                 Overview
               </p>
 
-              {/* Alert Cards */}
+              {/* 2025 Alert Cards with Glassmorphism */}
               <div className="space-y-2">
-                {/* Overdue Alert */}
+                {/* Overdue Alert - Modern gradient card */}
                 {stats.overdue > 0 && (
-                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-destructive/10 to-destructive/5 border border-destructive/15 animate-fade-in">
-                    <div className="w-8 h-8 rounded-lg bg-destructive/15 flex items-center justify-center">
-                      <AlertTriangle className="w-4 h-4 text-destructive" />
+                  <div className="group flex items-center gap-3 px-3 py-3 rounded-xl bg-gradient-to-r from-destructive/15 via-destructive/10 to-transparent border border-destructive/20 animate-fade-in shadow-soft hover:shadow-2025-md transition-all duration-300">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-destructive/20 to-destructive/10 flex items-center justify-center shadow-soft group-hover:scale-110 transition-transform">
+                      <AlertTriangle className="w-4 h-4 text-destructive drop-shadow" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-destructive">{stats.overdue} overdue</p>
-                      <p className="text-[10px] text-destructive/70">Needs attention</p>
+                      <p className="text-xs font-bold text-destructive">{stats.overdue} overdue</p>
+                      <p className="text-[10px] text-destructive/70 font-medium">Needs attention</p>
+                    </div>
+                    <div className="ml-auto">
+                      <div className="status-dot-pulse bg-destructive" />
                     </div>
                   </div>
                 )}
 
-                {/* Due Today */}
+                {/* Due Today - Vibrant blue card */}
                 {stats.dueToday > 0 && (
-                  <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/15 animate-fade-in">
-                    <div className="w-8 h-8 rounded-lg bg-primary/15 flex items-center justify-center">
-                      <Clock className="w-4 h-4 text-primary" />
+                  <div className="group flex items-center gap-3 px-3 py-3 rounded-xl bg-gradient-to-r from-primary/15 via-primary/10 to-transparent border border-primary/20 animate-fade-in shadow-soft hover:shadow-2025-md transition-all duration-300">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center shadow-soft group-hover:scale-110 transition-transform">
+                      <Clock className="w-4 h-4 text-primary drop-shadow" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-primary">{stats.dueToday} due today</p>
-                      <p className="text-[10px] text-primary/70">In progress</p>
+                      <p className="text-xs font-bold text-primary">{stats.dueToday} due today</p>
+                      <p className="text-[10px] text-primary/70 font-medium">In progress</p>
+                    </div>
+                    <div className="ml-auto">
+                      <div className="status-dot-pulse bg-primary" />
                     </div>
                   </div>
                 )}
               </div>
 
-              {/* Progress Card */}
-              <div className="mt-4 p-4 rounded-xl bg-gradient-to-br from-secondary/80 to-secondary/40 border border-border/50">
+              {/* 2025 Progress Card - Premium glassmorphism */}
+              <div className="mt-4 p-4 rounded-xl card-frosted animate-fade-in hover:shadow-2025-lg transition-all duration-300">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs font-medium text-muted-foreground">Completion Rate</span>
-                  <span className="text-lg font-bold text-foreground">{stats.completionRate}%</span>
+                  <span className="text-xs font-semibold text-muted-foreground">Completion Rate</span>
+                  <span className="text-xl font-black text-foreground gradient-text">{stats.completionRate}%</span>
                 </div>
-                <Progress value={stats.completionRate} className="h-1.5" />
-                <p className="mt-2 text-[10px] text-muted-foreground">
+                <Progress value={stats.completionRate} className="h-2" />
+                <p className="mt-2.5 text-[10px] text-muted-foreground font-medium">
                   {stats.completed} of {stats.completed + stats.totalTasks} tasks done
                 </p>
               </div>

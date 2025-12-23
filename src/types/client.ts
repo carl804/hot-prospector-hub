@@ -30,11 +30,13 @@ export interface CSM {
 export interface Client {
   id: string;
   name: string;
+  contactId?: string;
   contactName: string;
   contactEmail: string;
   contactPhone: string;
   startDate?: string;
   status: 'active' | 'completed' | 'on_hold';
+  stage?: string;
   pipelineStage?: PipelineStage;
   assignedCsmId?: string;
   assessmentBooked?: boolean;

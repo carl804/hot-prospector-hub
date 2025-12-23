@@ -98,6 +98,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         method = 'POST';
         body = JSON.stringify(data);
         break;
+      case 'contacts.updateCustomField':
+        endpoint = `/contacts/${contactId}`;
+        method = 'PUT';
+        // GHL expects custom fields in customFields array format
+        body = JSON.stringify({
+          customFields: [
+            {
+              key: (data as any).fieldKey,
+              field_value: (data as any).value,
+            },
+          ],
+        });
+        break;
 
       // ============ OPPORTUNITIES ============
       case 'opportunities.list': {

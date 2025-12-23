@@ -26,7 +26,7 @@ import type {
 } from '@/types/ghl';
 
 type GHLAction =
-  | 'contacts.list' | 'contacts.get' | 'contacts.create' | 'contacts.update' | 'contacts.delete' | 'contacts.addTag'
+  | 'contacts.list' | 'contacts.get' | 'contacts.create' | 'contacts.update' | 'contacts.delete' | 'contacts.addTag' | 'contacts.updateCustomField'
   | 'opportunities.list' | 'opportunities.get' | 'opportunities.create' | 'opportunities.update' | 'opportunities.delete' | 'opportunities.updateStatus'
   | 'pipelines.list' | 'pipelines.get'
   | 'tasks.list' | 'tasks.get' | 'tasks.create' | 'tasks.update' | 'tasks.delete' | 'tasks.complete'
@@ -86,6 +86,9 @@ export const contactsApi = {
 
   addTag: (contactId: string, tags: string[]) =>
     ghlRequest<GHLContact>({ action: 'contacts.addTag', contactId, data: { tags } }),
+
+  updateCustomField: (contactId: string, fieldKey: string, value: string) =>
+    ghlRequest<GHLContact>({ action: 'contacts.updateCustomField', contactId, data: { fieldKey, value } }),
 };
 
 // ============ OPPORTUNITIES ============

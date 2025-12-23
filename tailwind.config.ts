@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
-        mono: ['SF Mono', 'Fira Code', 'monospace'],
+        sans: ['Geist', 'Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+        mono: ['Geist Mono', 'SF Mono', 'Fira Code', 'monospace'],
       },
       fontSize: {
         '2xs': ['0.625rem', { lineHeight: '0.875rem' }],
@@ -33,6 +33,12 @@ export default {
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
+          accent: "hsl(var(--secondary-accent))",
+        },
+        neon: {
+          cyan: "hsl(var(--neon-cyan))",
+          pink: "hsl(var(--neon-pink))",
+          green: "hsl(var(--neon-green))",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
@@ -109,9 +115,16 @@ export default {
         "card-hover": "var(--card-shadow-hover)",
         "card-dragging": "var(--card-shadow-dragging)",
         "glow": "var(--shadow-glow)",
-        "soft": "0 2px 8px -2px rgba(0, 0, 0, 0.08)",
-        "soft-lg": "0 4px 16px -4px rgba(0, 0, 0, 0.1)",
+        "glow-lg": "var(--shadow-glow-lg)",
+        "glow-gold": "var(--shadow-glow-gold)",
+        "soft": "var(--shadow-sm)",
+        "soft-lg": "var(--shadow-lg)",
         "inner-soft": "inset 0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+        "2025-sm": "var(--shadow-sm)",
+        "2025-md": "var(--shadow-md)",
+        "2025-lg": "var(--shadow-lg)",
+        "2025-xl": "var(--shadow-xl)",
+        "2025-2xl": "var(--shadow-2xl)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -125,9 +138,16 @@ export default {
         "13": "3.25rem",
         "15": "3.75rem",
         "18": "4.5rem",
+        "22": "5.5rem",
+        "26": "6.5rem",
       },
       backdropBlur: {
         xs: "2px",
+        "2xl": "40px",
+        "3xl": "64px",
+      },
+      backdropSaturate: {
+        "180": "180%",
       },
       keyframes: {
         "accordion-down": {
@@ -158,6 +178,18 @@ export default {
           from: { transform: "rotate(0deg)" },
           to: { transform: "rotate(360deg)" },
         },
+        "glow-pulse": {
+          "0%, 100%": { opacity: "1", transform: "scale(1)" },
+          "50%": { opacity: "0.8", transform: "scale(1.05)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "shimmer-slide": {
+          "0%": { backgroundPosition: "-200% 0" },
+          "100%": { backgroundPosition: "200% 0" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -167,6 +199,9 @@ export default {
         "fade-in": "fade-in 0.2s ease-out",
         "scale-in": "scale-in 0.2s ease-out",
         "spin-slow": "spin-slow 3s linear infinite",
+        "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "float": "float 3s ease-in-out infinite",
+        "shimmer": "shimmer-slide 2s linear infinite",
       },
       transitionDuration: {
         "250": "250ms",

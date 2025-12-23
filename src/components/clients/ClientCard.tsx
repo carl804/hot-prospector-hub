@@ -36,39 +36,37 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
     <div
       onClick={onClick}
       className={cn(
-        'group relative bg-card rounded-2xl border border-border/40 p-5',
-        'cursor-pointer transition-all duration-200 ease-out',
-        'hover:border-border/80 hover:-translate-y-0.5',
-        'shadow-[0_1px_3px_0_rgb(0_0_0/0.02),0_1px_2px_-1px_rgb(0_0_0/0.02)]',
-        'hover:shadow-[0_8px_16px_-4px_rgb(0_0_0/0.08),0_4px_8px_-4px_rgb(0_0_0/0.04)]',
-        'dark:shadow-[0_1px_3px_0_rgb(0_0_0/0.2)]',
-        'dark:hover:shadow-[0_8px_24px_-4px_rgb(0_0_0/0.4)]',
+        'group relative card-modern overflow-hidden',
+        'cursor-pointer',
         isComplete && 'opacity-70'
       )}
     >
+      {/* 2025 Subtle gradient background orb */}
+      <div className="absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br from-primary/10 to-transparent rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+      <div className="relative">
       {/* Top Row: Icon + Name + Actions */}
       <div className="flex items-start gap-3.5 mb-4">
-        {/* Client Icon */}
+        {/* 2025 Client Icon with gradient */}
         <div className={cn(
-          'relative flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center',
-          'transition-all duration-200',
+          'relative flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center',
+          'transition-all duration-300 group-hover:scale-110 shadow-soft',
           isComplete
-            ? 'bg-success/10'
-            : 'bg-gradient-to-br from-primary/10 to-primary/5 group-hover:from-primary/15 group-hover:to-primary/10'
+            ? 'bg-gradient-to-br from-success/15 to-success/5'
+            : 'bg-gradient-to-br from-primary/15 via-primary/10 to-primary/5 group-hover:from-primary/20 group-hover:to-primary/10'
         )}>
           {isComplete ? (
-            <CheckCircle2 className="w-5 h-5 text-success" />
+            <CheckCircle2 className="w-5 h-5 text-success drop-shadow" />
           ) : (
-            <Building2 className="w-5 h-5 text-primary" />
+            <Building2 className="w-5 h-5 text-primary drop-shadow" />
           )}
         </div>
 
-        {/* Name & Contact */}
+        {/* Name & Contact - Enhanced typography */}
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-foreground text-[15px] leading-tight truncate tracking-tight">
+          <h3 className="font-bold text-foreground text-base leading-tight truncate tracking-tight">
             {client.name}
           </h3>
-          <p className="text-[13px] text-muted-foreground mt-0.5 truncate">
+          <p className="text-xs text-muted-foreground mt-1 truncate font-medium">
             {client.contactName}
           </p>
         </div>
@@ -194,6 +192,7 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
             <span className="text-[11px] font-semibold text-success">Complete</span>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

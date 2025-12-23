@@ -50,7 +50,7 @@ export function useLogActivity() {
   });
 }
 
-// Hook to automatically log page views
+// Hook to automatically log page views (throttled to prevent spam)
 export function useAutoLogPageView() {
   const location = useLocation();
   const logActivity = useLogActivity();
@@ -58,10 +58,23 @@ export function useAutoLogPageView() {
   useEffect(() => {
     // Only log in production (when API is available)
     if (import.meta.env.PROD || import.meta.env.VITE_API_BASE_URL) {
-      logActivity.mutate({
-        page: location.pathname,
-        action: 'page_view',
-      });
+      const page = location.pathname;
+      const now = Date.now();
+      const storageKey = `activity_log_${page}`;
+      const lastLogged = localStorage.getItem(storageKey);
+
+      // Only log if:
+      // 1. Never logged this page before, OR
+      // 2. Last log was more than 30 minutes ago
+      const THROTTLE_TIME = 30 * 60 * 1000; // 30 minutes
+
+      if (!lastLogged || now - parseInt(lastLogged) > THROTTLE_TIME) {
+        logActivity.mutate({
+          page,
+          action: 'page_view',
+        });
+        localStorage.setItem(storageKey, now.toString());
+      }
     }
   }, [location.pathname]);
 }
