@@ -2,6 +2,8 @@
 // This handles ALL GHL operations through a single API route
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { validateGHLConfig } from '../config/validate';
+import { rateLimitedFetch } from './rate-limiter';
 
 const GHL_API_BASE = 'https://services.leadconnectorhq.com';
 
@@ -47,8 +49,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  if (!GHL_API_KEY || !GHL_LOCATION_ID) {
-    return res.status(500).json({ error: 'Missing GHL configuration' });
+  // Validate GHL configuration using Zod schema
+  const ghlConfig = validateGHLConfig();
+  if (!ghlConfig.valid) {
+    return res.status(500).json({
+      error: 'Missing GHL configuration',
+      missing: ghlConfig.missing,
+    });
   }
 
   const headers = {
@@ -284,7 +291,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: `Unknown action: ${action}` });
     }
 
-    const response = await fetch(`${GHL_API_BASE}${endpoint}`, {
+    // Use rate-limited fetch with exponential backoff
+    const response = await rateLimitedFetch(`${GHL_API_BASE}${endpoint}`, {
       method,
       headers,
       body,

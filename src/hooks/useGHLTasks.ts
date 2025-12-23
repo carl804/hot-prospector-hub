@@ -4,53 +4,70 @@ import { tasksApi } from '@/services/ghl/api';
 import { GHL_QUERY_KEYS } from '@/services/ghl/config';
 import type { GHLTaskCreate, GHLTaskUpdate } from '@/types/ghl';
 import { toast } from 'sonner';
+import pLimit from 'p-limit';
 
-export function usePipelineTasks(pipelineId: string) {
+// Limit concurrent task fetches to avoid overwhelming the API
+const CONCURRENT_LIMIT = 5;
+
+export function usePipelineTasks(pipelineId: string, onProgress?: (current: number, total: number) => void) {
   const { data: opportunitiesData, isLoading: isLoadingOpps } = useGHLOpportunities({ limit: 100 });
-  
+
   const tasksQuery = useQuery({
     queryKey: [...GHL_QUERY_KEYS.tasks, 'pipeline', pipelineId],
     queryFn: async () => {
       const allOpps = ((opportunitiesData as any)?.opportunities || []);
       const pipelineOpps = allOpps.filter((opp: any) => opp.pipelineId === pipelineId);
-      
+
       console.log(`📋 Fetching tasks for ${pipelineOpps.length} clients in pipeline...`);
-      
-      const taskPromises = pipelineOpps.map(async (opp: any) => {
-        const contactId = opp.contactId || opp.contact?.id;
-        if (!contactId) {
-          console.warn(`⚠️ No contactId for opportunity: ${opp.name}`);
-          return [];
-        }
-        
-        try {
-          const ghlTasks = await tasksApi.listByContact(contactId);
-          console.log(`✅ ${opp.name}: ${ghlTasks.length} tasks`);
-          
-          return ghlTasks.map((ghlTask: any) => ({
-            id: ghlTask.id,
-            title: ghlTask.title,
-            description: ghlTask.body || '',
-            clientId: opp.id,
-            clientName: opp.name,
-            contactId: contactId,
-            dueDate: ghlTask.dueDate,
-            priority: 'medium' as const, // Will be overridden by cache
-            status: ghlTask.completed ? 'completed' as const : 'todo' as const,
-            category: 'General',
-            completed: ghlTask.completed,
-            createdAt: ghlTask.dateAdded || new Date().toISOString(),
-            completedAt: ghlTask.completed ? new Date().toISOString() : undefined,
-          }));
-        } catch (error) {
-          console.error(`❌ Failed to fetch tasks for ${opp.name}:`, error);
-          return [];
-        }
-      });
-      
+
+      // Use p-limit for controlled concurrency
+      const limit = pLimit(CONCURRENT_LIMIT);
+      let completed = 0;
+      const total = pipelineOpps.length;
+
+      const taskPromises = pipelineOpps.map((opp: any) =>
+        limit(async () => {
+          const contactId = opp.contactId || opp.contact?.id;
+          if (!contactId) {
+            console.warn(`⚠️ No contactId for opportunity: ${opp.name}`);
+            completed++;
+            onProgress?.(completed, total);
+            return [];
+          }
+
+          try {
+            const ghlTasks = await tasksApi.listByContact(contactId);
+            completed++;
+            onProgress?.(completed, total);
+            console.log(`✅ [${completed}/${total}] ${opp.name}: ${ghlTasks.length} tasks`);
+
+            return ghlTasks.map((ghlTask: any) => ({
+              id: ghlTask.id,
+              title: ghlTask.title,
+              description: ghlTask.body || '',
+              clientId: opp.id,
+              clientName: opp.name,
+              contactId: contactId,
+              dueDate: ghlTask.dueDate,
+              priority: 'medium' as const, // Will be overridden by cache
+              status: ghlTask.completed ? 'completed' as const : 'todo' as const,
+              category: 'General',
+              completed: ghlTask.completed,
+              createdAt: ghlTask.dateAdded || new Date().toISOString(),
+              completedAt: ghlTask.completed ? new Date().toISOString() : undefined,
+            }));
+          } catch (error) {
+            console.error(`❌ Failed to fetch tasks for ${opp.name}:`, error);
+            completed++;
+            onProgress?.(completed, total);
+            return [];
+          }
+        })
+      );
+
       const allTaskArrays = await Promise.all(taskPromises);
       const allTasks = allTaskArrays.flat();
-      
+
       console.log(`🎉 TOTAL TASKS FETCHED: ${allTasks.length}`);
       return allTasks;
     },
@@ -58,7 +75,7 @@ export function usePipelineTasks(pipelineId: string) {
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
   });
-  
+
   return { ...tasksQuery, isLoading: isLoadingOpps || tasksQuery.isLoading };
 }
 

@@ -1,4 +1,4 @@
-import { Building2, ListTodo, AlertTriangle, Clock, Activity, Zap } from 'lucide-react';
+import { Building2, ListTodo, AlertTriangle, Clock, Activity, Zap, ExternalLink, CalendarDays } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useLocation } from 'react-router-dom';
 import { useMemo } from 'react';
@@ -84,6 +84,13 @@ export function AppSidebar() {
       icon: ListTodo,
       badge: stats.totalTasks,
       badgeVariant: stats.overdue > 0 ? 'destructive' as const : 'default' as const,
+    },
+    {
+      title: 'Calendar',
+      url: '/calendar',
+      icon: CalendarDays,
+      badge: 0,
+      badgeVariant: 'default' as const,
     },
     {
       title: 'Activity',
@@ -196,6 +203,26 @@ export function AppSidebar() {
               <p className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-widest px-2">
                 Overview
               </p>
+
+              {/* Miro Board Link */}
+              <a
+                href="https://miro.com/app/board/uXjVJHpASfA=/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3 px-3 py-2.5 rounded-xl bg-gradient-to-r from-[#FFD02F]/15 via-[#FFD02F]/10 to-transparent border border-[#FFD02F]/20 hover:border-[#FFD02F]/40 shadow-soft hover:shadow-2025-md transition-all duration-300"
+              >
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#FFD02F]/25 to-[#FFD02F]/15 flex items-center justify-center shadow-soft group-hover:scale-110 transition-transform">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none">
+                    <path d="M17.4 4H6.6C5.1 4 4 5.1 4 6.6V17.4C4 18.9 5.1 20 6.6 20H17.4C18.9 20 20 18.9 20 17.4V6.6C20 5.1 18.9 4 17.4 4Z" fill="#FFD02F"/>
+                    <path d="M7 8H9V16H7V8ZM11 8H13V16H11V8ZM15 8H17V16H15V8Z" fill="white"/>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground truncate">Miro Board</p>
+                  <p className="text-[10px] text-muted-foreground font-medium">Workflow Map</p>
+                </div>
+                <ExternalLink className="w-3.5 h-3.5 text-muted-foreground/50 group-hover:text-[#FFD02F] transition-colors" />
+              </a>
 
               {/* 2025 Alert Cards with Glassmorphism */}
               <div className="space-y-2">

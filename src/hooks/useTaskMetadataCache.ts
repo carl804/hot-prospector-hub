@@ -39,6 +39,45 @@ export function useTaskMetadataCache() {
     }
   }, [cache]);
 
+  // Multi-tab sync: Listen for storage events from other tabs
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      // Only handle changes to our storage key from other tabs
+      if (event.key !== STORAGE_KEY || !event.newValue) return;
+
+      try {
+        const remoteCache: TaskMetadataCache = JSON.parse(event.newValue);
+
+        // Merge with local cache using last-write-wins strategy
+        setCache(prev => {
+          const merged = { ...prev };
+          let hasChanges = false;
+
+          Object.keys(remoteCache).forEach(taskId => {
+            const remote = remoteCache[taskId];
+            const local = prev[taskId];
+
+            // Remote wins if local doesn't exist or remote is newer
+            if (!local || new Date(remote.lastUpdated) > new Date(local.lastUpdated)) {
+              merged[taskId] = remote;
+              hasChanges = true;
+            }
+          });
+
+          // Only update state if there were actual changes
+          return hasChanges ? merged : prev;
+        });
+
+        console.log('📡 Synced task metadata from another tab');
+      } catch (error) {
+        console.error('Failed to parse storage event:', error);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   // Load metadata from GHL for a contact
   const loadFromGHL = useCallback(async (contactId: string) => {
     try {
