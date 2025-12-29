@@ -107,8 +107,8 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
 
       {/* Tags Row - Cleaner, more minimal */}
       <div className="flex items-center gap-1.5 mb-4 flex-wrap">
-        {/* Pipeline Stage */}
-        {stage && (
+        {/* Pipeline Stage - Only show for Account Setup pipeline */}
+        {!isOnboardingPipeline && stage && (
           <span className={cn(
             'inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg',
             'bg-primary/8 text-primary'
@@ -151,28 +151,42 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
         </span>
       </div>
 
-      {/* Progress Section - Shows "Onboarding Stage" for Onboarding pipeline clients */}
-      <div className="mb-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-[12px] font-medium text-muted-foreground tracking-wide uppercase">
-            {isOnboardingPipeline ? 'Onboarding Stage' : 'Progress'}
-          </span>
-          <span className="text-[13px] font-semibold text-foreground tabular-nums">
-            {completedTasks}/{totalTasks}
-          </span>
+      {/* Progress Section - Different display for Onboarding vs Account Setup */}
+      {isOnboardingPipeline ? (
+        /* Onboarding Pipeline: Show styled stage label instead of progress bar */
+        <div className="mb-4">
+          <div className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-primary/10 border border-primary/20">
+            <span className="text-[11px] text-primary/60">—</span>
+            <span className="text-[12px] font-semibold text-primary tracking-wide">
+              {stage?.label || 'Onboarding Stage'}
+            </span>
+            <span className="text-[11px] text-primary/60">—</span>
+          </div>
         </div>
-        <div className="h-1.5 bg-secondary/80 rounded-full overflow-hidden">
-          <div
-            className={cn(
-              'h-full rounded-full transition-all duration-500 ease-out',
-              isComplete
-                ? 'bg-gradient-to-r from-success to-success/80'
-                : 'bg-gradient-to-r from-primary to-primary/80'
-            )}
-            style={{ width: `${progress}%` }}
-          />
+      ) : (
+        /* Account Setup Pipeline: Show progress bar */
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[12px] font-medium text-muted-foreground tracking-wide uppercase">
+              Progress
+            </span>
+            <span className="text-[13px] font-semibold text-foreground tabular-nums">
+              {completedTasks}/{totalTasks}
+            </span>
+          </div>
+          <div className="h-1.5 bg-secondary/80 rounded-full overflow-hidden">
+            <div
+              className={cn(
+                'h-full rounded-full transition-all duration-500 ease-out',
+                isComplete
+                  ? 'bg-gradient-to-r from-success to-success/80'
+                  : 'bg-gradient-to-r from-primary to-primary/80'
+              )}
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Status Row - Cleaner badges */}
       <div className="flex items-center gap-2 flex-wrap">
