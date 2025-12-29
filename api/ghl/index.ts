@@ -1,14 +1,73 @@
 // Consolidated GHL API Route for Vercel (single endpoint to stay within free tier limits)
 // This handles ALL GHL operations through a single API route
+// Rate limiting and validation are inlined to reduce serverless function count
 
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { validateGHLConfig } from '../config/validate';
-import { rateLimitedFetch } from './rate-limiter';
+import Bottleneck from 'bottleneck';
 
 const GHL_API_BASE = 'https://services.leadconnectorhq.com';
 
+// ============ INLINED RATE LIMITER ============
+// GHL API limits: ~100 requests per minute, we'll be conservative
+const limiter = new Bottleneck({
+  maxConcurrent: 5,
+  minTime: 100,
+  reservoir: 100,
+  reservoirRefreshAmount: 100,
+  reservoirRefreshInterval: 60 * 1000,
+});
+
+let consecutiveRateLimits = 0;
+const MAX_BACKOFF_MS = 30000;
+const BASE_BACKOFF_MS = 1000;
+
+function getBackoffDelay(): number {
+  if (consecutiveRateLimits === 0) return 0;
+  return Math.min(BASE_BACKOFF_MS * Math.pow(2, consecutiveRateLimits - 1), MAX_BACKOFF_MS);
+}
+
+async function rateLimitedFetch(url: string, options: RequestInit): Promise<Response> {
+  return limiter.schedule(async () => {
+    const backoffDelay = getBackoffDelay();
+    if (backoffDelay > 0) {
+      console.log(`⏳ Rate limit backoff: waiting ${backoffDelay}ms`);
+      await new Promise(resolve => setTimeout(resolve, backoffDelay));
+    }
+
+    const response = await fetch(url, options);
+
+    if (response.status === 429) {
+      consecutiveRateLimits++;
+      console.warn(`⚠️ GHL Rate limit hit (${consecutiveRateLimits} consecutive)`);
+      const retryAfter = response.headers.get('Retry-After');
+      const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : getBackoffDelay();
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+      const retryResponse = await fetch(url, options);
+      if (retryResponse.status !== 429) {
+        consecutiveRateLimits = Math.max(0, consecutiveRateLimits - 1);
+      }
+      return retryResponse;
+    }
+
+    if (response.ok) {
+      consecutiveRateLimits = 0;
+    }
+
+    return response;
+  });
+}
+
+// ============ INLINED VALIDATION ============
+function validateGHLConfig(): { valid: boolean; missing: string[] } {
+  const missing: string[] = [];
+  if (!process.env.GHL_API_KEY) missing.push('GHL_API_KEY');
+  if (!process.env.GHL_LOCATION_ID) missing.push('GHL_LOCATION_ID');
+  return { valid: missing.length === 0, missing };
+}
+
+// ============ GHL ACTION TYPES ============
 type GHLAction =
-  | 'contacts.list' | 'contacts.get' | 'contacts.create' | 'contacts.update' | 'contacts.delete' | 'contacts.addTag'
+  | 'contacts.list' | 'contacts.get' | 'contacts.create' | 'contacts.update' | 'contacts.delete' | 'contacts.addTag' | 'contacts.updateCustomField'
   | 'opportunities.list' | 'opportunities.get' | 'opportunities.create' | 'opportunities.update' | 'opportunities.delete' | 'opportunities.updateStatus'
   | 'pipelines.list' | 'pipelines.get'
   | 'tasks.list' | 'tasks.get' | 'tasks.create' | 'tasks.update' | 'tasks.delete' | 'tasks.complete'
@@ -49,7 +108,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
   }
 
-  // Validate GHL configuration using Zod schema
+  // Validate GHL configuration
   const ghlConfig = validateGHLConfig();
   if (!ghlConfig.valid) {
     return res.status(500).json({
@@ -74,7 +133,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     switch (action) {
       // ============ CONTACTS ============
       case 'contacts.list': {
-        const searchParams = new URLSearchParams({ location_id: GHL_LOCATION_ID });
+        const searchParams = new URLSearchParams({ location_id: GHL_LOCATION_ID! });
         if (params?.limit) searchParams.set('limit', String(params.limit));
         if (params?.startAfter) searchParams.set('startAfter', String(params.startAfter));
         if (params?.startAfterId) searchParams.set('startAfterId', String(params.startAfterId));
@@ -108,7 +167,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       case 'contacts.updateCustomField':
         endpoint = `/contacts/${contactId}`;
         method = 'PUT';
-        // GHL expects custom fields in customFields array format
         body = JSON.stringify({
           customFields: [
             {
@@ -121,7 +179,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // ============ OPPORTUNITIES ============
       case 'opportunities.list': {
-        const searchParams = new URLSearchParams({ location_id: GHL_LOCATION_ID });
+        const searchParams = new URLSearchParams({ location_id: GHL_LOCATION_ID! });
         if (params?.pipelineId) searchParams.set('pipelineId', String(params.pipelineId));
         if (params?.stageId) searchParams.set('stageId', String(params.stageId));
         if (params?.status) searchParams.set('status', String(params.status));
@@ -305,26 +363,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(response.status).json(responseData);
     }
 
-    // ⭐ FIX: Extract contact object from GHL response
-    // GHL returns {contact: {...}} but we expect just the contact object
+    // Extract nested data from GHL responses
     if (action === 'contacts.get' && responseData.contact) {
       return res.status(200).json(responseData.contact);
     }
-
-    // ⭐ FIX: Extract custom fields array from GHL response
-    // GHL returns {customFields: [...]} but we expect just the array
     if (action === 'customFields.list' && responseData.customFields) {
       return res.status(200).json(responseData.customFields);
     }
-
-    // ⭐ FIX: Extract tasks array from GHL response
-    // GHL returns {tasks: [...], traceId: "..."} but we expect just the array
     if (action === 'tasks.list' && responseData.tasks) {
       return res.status(200).json(responseData.tasks);
     }
-
-    // ⭐ FIX: Extract notes array from GHL response
-    // GHL returns {notes: [...], traceId: "..."} but we expect just the array
     if (action === 'notes.list' && responseData.notes) {
       return res.status(200).json(responseData.notes);
     }
