@@ -38,6 +38,8 @@ export interface Client {
   status: 'active' | 'completed' | 'on_hold';
   stage?: string;
   pipelineStage?: PipelineStage;
+  pipelineId?: string;
+  pipelineName?: string;
   assignedCsmId?: string;
   assessmentBooked?: boolean;
   assessmentDate?: string;

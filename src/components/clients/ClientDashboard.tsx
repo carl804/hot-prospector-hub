@@ -9,10 +9,10 @@ import { NotesModal } from '@/components/notes/NotesModal';
 import { useGHLOpportunities } from '@/hooks/useGHLOpportunities';
 import { usePipelineTasks } from '@/hooks/useGHLTasks';
 import { useContactCustomFields } from '@/hooks/useContactCustomFields';
+import { ALL_PIPELINE_IDS, PIPELINES, getPipelineName } from '@/config/pipelines';
 
 type StatusFilter = 'all' | 'active' | 'completed';
-
-const TARGET_PIPELINE_ID = "QNloaHE61P6yedF6jEzk"; // 002. Account Setup
+type PipelineFilter = 'all' | typeof PIPELINES.ACCOUNT_SETUP.id | typeof PIPELINES.ONBOARDING.id;
 
 // GHL Custom Field Keys for booking status (exact fieldKey values from GHL)
 const GHL_FIELD_KEYS = {
@@ -51,17 +51,18 @@ function isFieldTrue(value: any): boolean {
 
 export function ClientDashboard() {
   const { data: opportunitiesData, isLoading: isLoadingOpps } = useGHLOpportunities({ limit: 100 });
-  const { data: tasksData = [], isLoading: isLoadingTasks } = usePipelineTasks(TARGET_PIPELINE_ID);
+  const { data: tasksData = [], isLoading: isLoadingTasks } = usePipelineTasks(PIPELINES.ACCOUNT_SETUP.id);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('active');
-  const [csmFilter, setCsmFilter] = useState('all');
+  const [pipelineFilter, setPipelineFilter] = useState<PipelineFilter>('all');
   const [notesClient, setNotesClient] = useState<Client & { tasks: any[] } | null>(null);
 
-  // First pass: extract basic client data and contact IDs
+  // First pass: extract basic client data and contact IDs from ALL tracked pipelines
   const { basicClients, contactIds } = useMemo(() => {
     const allOpps = ((opportunitiesData as any)?.opportunities || []);
-    const filtered = allOpps.filter((opp: any) => opp.pipelineId === TARGET_PIPELINE_ID);
+    // Filter to include opportunities from both pipelines
+    const filtered = allOpps.filter((opp: any) => ALL_PIPELINE_IDS.includes(opp.pipelineId));
 
     const ids: string[] = [];
     const clients = filtered.map((opp: any) => {
@@ -81,6 +82,8 @@ export function ClientDashboard() {
         setupProgress: 0,
         lastActivity: opp.updatedAt || new Date().toISOString(),
         tags: [],
+        pipelineId: opp.pipelineId,
+        pipelineName: getPipelineName(opp.pipelineId),
       };
     });
 
@@ -174,18 +177,22 @@ export function ClientDashboard() {
 
   const filteredClients = useMemo(() => {
     return clientsWithTasks.filter(client => {
-      const matchesSearch = 
+      const matchesSearch =
         client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         client.contactName.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      const matchesStatus = 
+
+      const matchesStatus =
         statusFilter === 'all' ||
         (statusFilter === 'active' && client.status === 'active') ||
         (statusFilter === 'completed' && client.status === 'completed');
-      
-      return matchesSearch && matchesStatus;
+
+      const matchesPipeline =
+        pipelineFilter === 'all' ||
+        client.pipelineId === pipelineFilter;
+
+      return matchesSearch && matchesStatus && matchesPipeline;
     });
-  }, [clientsWithTasks, searchQuery, statusFilter]);
+  }, [clientsWithTasks, searchQuery, statusFilter, pipelineFilter]);
 
   const stats = useMemo(() => {
     const total = clients.length;
@@ -309,6 +316,17 @@ export function ClientDashboard() {
             <SelectItem value="all">All Status</SelectItem>
             <SelectItem value="active">Active</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
+          </SelectContent>
+        </Select>
+
+        <Select value={pipelineFilter} onValueChange={(value: PipelineFilter) => setPipelineFilter(value)}>
+          <SelectTrigger className="w-full sm:w-[200px] h-11 bg-secondary/50 border-transparent">
+            <SelectValue placeholder="Filter by pipeline" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Pipelines</SelectItem>
+            <SelectItem value={PIPELINES.ACCOUNT_SETUP.id}>{PIPELINES.ACCOUNT_SETUP.name}</SelectItem>
+            <SelectItem value={PIPELINES.ONBOARDING.id}>{PIPELINES.ONBOARDING.name}</SelectItem>
           </SelectContent>
         </Select>
       </div>
