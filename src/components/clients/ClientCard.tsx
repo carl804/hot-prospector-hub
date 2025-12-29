@@ -4,6 +4,7 @@ import { Task } from '@/types/task';
 import { cn } from '@/lib/utils';
 import { isToday, isPast, startOfDay } from 'date-fns';
 import { NotesIndicator } from '@/components/notes/NotesIndicator';
+import { PIPELINES, ONBOARDING_STAGES } from '@/config/pipelines';
 
 interface ClientCardProps {
   client: Client & { contactId?: string | null };
@@ -30,7 +31,12 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
 
   const isComplete = client.status === 'completed' || progress === 100;
   const csm = CSM_LIST.find((c) => c.id === client.assignedCsmId);
-  const stage = PIPELINE_STAGES.find((s) => s.id === client.pipelineStage);
+
+  // Determine if client is in Onboarding pipeline and get appropriate stage
+  const isOnboardingPipeline = client.pipelineId === PIPELINES.ONBOARDING.id;
+  const stage = isOnboardingPipeline
+    ? ONBOARDING_STAGES.find((s) => s.id === client.stage)
+    : PIPELINE_STAGES.find((s) => s.id === client.pipelineStage);
 
   return (
     <div
@@ -101,14 +107,16 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
 
       {/* Tags Row - Cleaner, more minimal */}
       <div className="flex items-center gap-1.5 mb-4 flex-wrap">
-        {/* Pipeline Stage */}
+        {/* Pipeline Stage - Different color for Onboarding pipeline */}
         {stage && (
           <span className={cn(
             'inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg',
-            'bg-primary/8 text-primary'
+            isOnboardingPipeline
+              ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
+              : 'bg-primary/8 text-primary'
           )}>
             <Layers className="w-3 h-3 opacity-70" />
-            {stage.label}
+            {isOnboardingPipeline ? 'Onboarding: ' : ''}{stage.label}
           </span>
         )}
 
@@ -145,10 +153,12 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
         </span>
       </div>
 
-      {/* Progress Section - Refined */}
+      {/* Progress Section - Shows "Onboarding Stage" for Onboarding pipeline clients */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[12px] font-medium text-muted-foreground tracking-wide uppercase">Progress</span>
+          <span className="text-[12px] font-medium text-muted-foreground tracking-wide uppercase">
+            {isOnboardingPipeline ? 'Onboarding Stage' : 'Progress'}
+          </span>
           <span className="text-[13px] font-semibold text-foreground tabular-nums">
             {completedTasks}/{totalTasks}
           </span>
@@ -159,7 +169,9 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
               'h-full rounded-full transition-all duration-500 ease-out',
               isComplete
                 ? 'bg-gradient-to-r from-success to-success/80'
-                : 'bg-gradient-to-r from-primary to-primary/80'
+                : isOnboardingPipeline
+                  ? 'bg-gradient-to-r from-purple-500 to-purple-500/80'
+                  : 'bg-gradient-to-r from-primary to-primary/80'
             )}
             style={{ width: `${progress}%` }}
           />

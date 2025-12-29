@@ -24,6 +24,24 @@ export const PIPELINES = {
   },
 } as const;
 
+// Onboarding Pipeline Stage Labels (stageId -> label)
+export const ONBOARDING_STAGES: { id: string; label: string }[] = [
+  { id: PIPELINES.ONBOARDING.stages.WELCOME, label: 'Welcome' },
+  { id: PIPELINES.ONBOARDING.stages.SETUP_COMPLETE, label: 'Setup Complete' },
+  { id: PIPELINES.ONBOARDING.stages.ONBOARDING_BOOKED, label: 'Onboarding Booked' },
+  { id: PIPELINES.ONBOARDING.stages.SALES_KICKOFF_BOOKED, label: 'Sales Kickoff Booked' },
+  { id: PIPELINES.ONBOARDING.stages.FEEDBACK_SENT, label: 'Feedback Sent' },
+  { id: PIPELINES.ONBOARDING.stages.FEEDBACK_RECEIVED, label: 'Feedback Received' },
+  { id: PIPELINES.ONBOARDING.stages.JUMP_TO_HYPERCARE, label: 'Jump to Hypercare' },
+  { id: PIPELINES.ONBOARDING.stages.NO_SHOW, label: 'No Show' },
+];
+
+// Helper to get onboarding stage label by stageId
+export function getOnboardingStageLabel(stageId: string): string | null {
+  const stage = ONBOARDING_STAGES.find(s => s.id === stageId);
+  return stage?.label || null;
+}
+
 // All pipeline IDs for filtering
 export const ALL_PIPELINE_IDS = [
   PIPELINES.ACCOUNT_SETUP.id,
