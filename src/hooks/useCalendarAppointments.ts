@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import { useGHLOpportunities } from '@/hooks/useGHLOpportunities';
 import { useContactCustomFields } from '@/hooks/useContactCustomFields';
-
-const TARGET_PIPELINE_ID = "QNloaHE61P6yedF6jEzk";
+import { ALL_PIPELINE_IDS, getPipelineName } from '@/config/pipelines';
 
 // GHL Custom Field Keys for booking dates
 const GHL_FIELD_KEYS = {
@@ -26,6 +25,8 @@ export interface CalendarAppointment {
   date: Date;
   dateString: string;
   booked: boolean;
+  pipelineId: string;
+  pipelineName: string;
 }
 
 // Helper to check if a value is truthy for "booked" status
@@ -52,22 +53,31 @@ function parseGHLDate(dateValue: any): Date | null {
 export function useCalendarAppointments() {
   const { data: opportunitiesData, isLoading: isLoadingOpps } = useGHLOpportunities({ limit: 100 });
 
-  // Extract contact IDs from opportunities
+  // Extract contact IDs from opportunities in ALL tracked pipelines
   const { basicData, contactIds } = useMemo(() => {
     const allOpps = ((opportunitiesData as any)?.opportunities || []);
-    const filtered = allOpps.filter((opp: any) => opp.pipelineId === TARGET_PIPELINE_ID);
+    // Filter to include opportunities from both Account Setup AND Onboarding pipelines
+    const filtered = allOpps.filter((opp: any) =>
+      ALL_PIPELINE_IDS.includes(opp.pipelineId)
+    );
 
     const ids: string[] = [];
+    const seenContactIds = new Set<string>(); // Avoid duplicates if contact is in multiple pipelines
+
     const data = filtered.map((opp: any) => {
       const contact = opp.contact;
       const contactId = contact?.id || opp.contactId || null;
-      if (contactId) ids.push(contactId);
+      if (contactId && !seenContactIds.has(contactId)) {
+        seenContactIds.add(contactId);
+        ids.push(contactId);
+      }
 
       return {
         opportunityId: opp.id,
         contactId,
         clientName: opp.name,
         contactEmail: contact?.email || '',
+        pipelineId: opp.pipelineId,
       };
     });
 
@@ -120,6 +130,8 @@ export function useCalendarAppointments() {
             date,
             dateString: dateValue,
             booked,
+            pipelineId: client.pipelineId,
+            pipelineName: getPipelineName(client.pipelineId),
           });
         }
       });

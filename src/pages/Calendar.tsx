@@ -283,8 +283,11 @@ export default function Calendar() {
                         {apt.booked ? 'Booked' : 'Pending'}
                       </Badge>
                     </div>
+                    <p className="text-[10px] text-muted-foreground/70 mt-2">
+                      {apt.pipelineName}
+                    </p>
                     {apt.contactEmail && (
-                      <p className="text-xs text-muted-foreground mt-2">
+                      <p className="text-xs text-muted-foreground mt-1">
                         {apt.contactEmail}
                       </p>
                     )}
