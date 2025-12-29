@@ -153,12 +153,12 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
 
       {/* Progress Section - Different display for Onboarding vs Account Setup */}
       {isOnboardingPipeline ? (
-        /* Onboarding Pipeline: Show styled stage label instead of progress bar */
+        /* Onboarding Pipeline: Show simple "Onboarding Stage" label */
         <div className="mb-4">
           <div className="flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-primary/10 border border-primary/20">
             <span className="text-[11px] text-primary/60">—</span>
             <span className="text-[12px] font-semibold text-primary tracking-wide">
-              {stage?.label || 'Onboarding Stage'}
+              Onboarding Stage
             </span>
             <span className="text-[11px] text-primary/60">—</span>
           </div>
