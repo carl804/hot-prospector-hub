@@ -107,16 +107,14 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
 
       {/* Tags Row - Cleaner, more minimal */}
       <div className="flex items-center gap-1.5 mb-4 flex-wrap">
-        {/* Pipeline Stage - Different color for Onboarding pipeline */}
+        {/* Pipeline Stage */}
         {stage && (
           <span className={cn(
             'inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-lg',
-            isOnboardingPipeline
-              ? 'bg-purple-500/10 text-purple-600 dark:text-purple-400'
-              : 'bg-primary/8 text-primary'
+            'bg-primary/8 text-primary'
           )}>
             <Layers className="w-3 h-3 opacity-70" />
-            {isOnboardingPipeline ? 'Onboarding: ' : ''}{stage.label}
+            {stage.label}
           </span>
         )}
 
@@ -169,9 +167,7 @@ export function ClientCard({ client, tasks, onClick, onNotesClick }: ClientCardP
               'h-full rounded-full transition-all duration-500 ease-out',
               isComplete
                 ? 'bg-gradient-to-r from-success to-success/80'
-                : isOnboardingPipeline
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-500/80'
-                  : 'bg-gradient-to-r from-primary to-primary/80'
+                : 'bg-gradient-to-r from-primary to-primary/80'
             )}
             style={{ width: `${progress}%` }}
           />
