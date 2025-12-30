@@ -78,8 +78,10 @@ export const contactsApi = {
   create: (data: GHLContactCreate) =>
     ghlRequest<GHLContact>({ action: 'contacts.create', data }),
 
-  update: (data: GHLContactUpdate) =>
-    ghlRequest<GHLContact>({ action: 'contacts.update', id: data.id, data }),
+  update: (data: GHLContactUpdate) => {
+    const { id, ...updateData } = data;
+    return ghlRequest<GHLContact>({ action: 'contacts.update', id, data: updateData });
+  },
 
   delete: (id: string) =>
     ghlRequest<void>({ action: 'contacts.delete', id }),
@@ -102,8 +104,10 @@ export const opportunitiesApi = {
   create: (data: GHLOpportunityCreate) =>
     ghlRequest<GHLOpportunity>({ action: 'opportunities.create', data }),
 
-  update: (data: GHLOpportunityUpdate) =>
-    ghlRequest<GHLOpportunity>({ action: 'opportunities.update', id: data.id, data }),
+  update: (data: GHLOpportunityUpdate) => {
+    const { id, ...updateData } = data;
+    return ghlRequest<GHLOpportunity>({ action: 'opportunities.update', id, data: updateData });
+  },
 
   delete: (id: string) =>
     ghlRequest<void>({ action: 'opportunities.delete', id }),
