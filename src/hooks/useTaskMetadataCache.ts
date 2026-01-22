@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { Priority } from '@/types/task';
 import { contactsApi } from '@/services/ghl/api';
 import { toast } from 'sonner';
+import pLimit from 'p-limit';
 
 interface TaskMetadata {
   priority: Priority;
@@ -13,7 +14,6 @@ interface TaskMetadataCache {
 }
 
 const STORAGE_KEY = 'task-metadata-cache';
-const CUSTOM_FIELD_KEY = 'contact.task_temperature_json';
 const CUSTOM_FIELD_ID = 'IupahPvXega24Wf5SFtr'; // Task Temperature JSON field ID
 
 export function useTaskMetadataCache() {
@@ -29,6 +29,8 @@ export function useTaskMetadataCache() {
   
   const contactCacheRef = useRef<Map<string, string>>(new Map());
   const syncTimeoutRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const loadedContactsRef = useRef<Set<string>>(new Set());
+  const loadLimiter = useRef(pLimit(2)); // Max 2 concurrent API calls
 
   // Save to localStorage whenever cache changes
   useEffect(() => {
@@ -78,37 +80,48 @@ export function useTaskMetadataCache() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
-  // Load metadata from GHL for a contact
+  // Load metadata from GHL for a contact (rate-limited)
   const loadFromGHL = useCallback(async (contactId: string) => {
-    try {
-      const contact: any = await contactsApi.get(contactId);
-      
-      // Find the custom field by ID
-      const customField = contact.customFields?.find((f: any) => f.id === CUSTOM_FIELD_ID);
-      const jsonData = customField?.value;
-      
-      if (jsonData) {
-        const parsed: TaskMetadataCache = JSON.parse(jsonData);
-        
-        // Merge with local cache (local takes precedence if newer)
-        setCache(prev => {
-          const merged = { ...prev };
-          Object.keys(parsed).forEach(taskId => {
-            const remote = parsed[taskId];
-            const local = prev[taskId];
-            
-            if (!local || new Date(remote.lastUpdated) > new Date(local.lastUpdated)) {
-              merged[taskId] = remote;
-            }
-          });
-          return merged;
-        });
-        
-        contactCacheRef.current.set(contactId, jsonData);
-      }
-    } catch (error) {
-      console.error('Failed to load task metadata from GHL:', error);
+    // Skip if already loaded this session
+    if (loadedContactsRef.current.has(contactId)) {
+      return;
     }
+    loadedContactsRef.current.add(contactId);
+
+    // Use rate limiter to prevent overwhelming the API
+    return loadLimiter.current(async () => {
+      try {
+        const contact: any = await contactsApi.get(contactId);
+
+        // Find the custom field by ID
+        const customField = contact.customFields?.find((f: any) => f.id === CUSTOM_FIELD_ID);
+        const jsonData = customField?.value;
+
+        if (jsonData) {
+          const parsed: TaskMetadataCache = JSON.parse(jsonData);
+
+          // Merge with local cache (local takes precedence if newer)
+          setCache(prev => {
+            const merged = { ...prev };
+            Object.keys(parsed).forEach(taskId => {
+              const remote = parsed[taskId];
+              const local = prev[taskId];
+
+              if (!local || new Date(remote.lastUpdated) > new Date(local.lastUpdated)) {
+                merged[taskId] = remote;
+              }
+            });
+            return merged;
+          });
+
+          contactCacheRef.current.set(contactId, jsonData);
+        }
+      } catch (error) {
+        // Remove from loaded set so it can be retried later
+        loadedContactsRef.current.delete(contactId);
+        console.error('Failed to load task metadata from GHL:', error);
+      }
+    });
   }, []);
 
   // Sync to GHL for a specific contact
