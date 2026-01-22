@@ -12,8 +12,16 @@ const CONCURRENT_LIMIT = 5;
 export function usePipelineTasks(pipelineId: string, onProgress?: (current: number, total: number) => void) {
   const { data: opportunitiesData, isLoading: isLoadingOpps } = useGHLOpportunities({ limit: 100 });
 
+  // Get all opportunities from the hook - need to use their IDs in the query key
+  const opportunityIds = ((opportunitiesData as any)?.opportunities || [])
+    .filter((opp: any) => opp.pipelineId === pipelineId)
+    .map((opp: any) => opp.id)
+    .sort()
+    .join(',');
+
   const tasksQuery = useQuery({
-    queryKey: [...GHL_QUERY_KEYS.tasks, 'pipeline', pipelineId],
+    // Include opportunity IDs in key so query re-runs when opportunities load
+    queryKey: [...GHL_QUERY_KEYS.tasks, 'pipeline', pipelineId, opportunityIds],
     queryFn: async () => {
       const allOpps = ((opportunitiesData as any)?.opportunities || []);
       const pipelineOpps = allOpps.filter((opp: any) => opp.pipelineId === pipelineId);
