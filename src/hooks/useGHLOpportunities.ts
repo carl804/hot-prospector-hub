@@ -20,7 +20,7 @@ export function useGHLOpportunities(params?: {
       let startAfterId: string | null = null;
       const seenIds = new Set<string>();
       
-      while (pageCount < 10) {
+      while (pageCount < 100) {
         pageCount++;
         
         const queryParams: any = { ...params, limit: 100 };
